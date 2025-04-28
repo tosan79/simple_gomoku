@@ -1,0 +1,23 @@
+.back-link {
+    color: #FF69B4; /* Pink color */ /* #FF69B4 */
+}
+
+.back-link:hover {
+    color: #e91e63; /* Darker pink on hover */
+}
+
+.back-link .arrow {
+    font-size: 36px;
+    margin-right: 10px;
+    transition: color 0.3s ease;
+}
+
+.back-link .back-text {
+    font-size: 16px;
+    transition: color 0.3s ease;
+}
+
+.back-link:hover .arrow,
+.back-link:hover .back-text {
+    color: #e91e63; /* Darker pink on hover */
+}

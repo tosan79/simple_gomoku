@@ -1,0 +1,35 @@
+.board {
+    margin: 20px auto;
+    border-collapse: collapse;
+}
+
+/* .cell {
+    width: 40px;
+    height: 40px;
+    text-align: center;
+    font-size: 24px;
+    border: 1px solid #000;
+    cursor: pointer;
+} */
+
+.cell {
+    width: 40px;
+    height: 40px;
+    text-align: center;
+    font-size: 24px;
+    font-family: Arial, sans-serif;  /* or another font that has rounder O's */
+    border: 1px solid #000;
+    cursor: pointer;
+}
+
+.cell.last-move {
+    font-weight: bold;
+    /* background-color: yellow; */
+}
+
+
+.cell.winning-cell {
+    color: #FF69B4 !important;  /* better pink #f507d1 */
+    font-weight: bold;
+    transition: color 0.3s ease;
+}

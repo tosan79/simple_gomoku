@@ -1,0 +1,138 @@
+.test-mode-container {
+    display: flex;
+    height: calc(100vh - 60px); /* Adjust based on navbar height */
+    padding: 15px;
+    gap: 20px;
+}
+
+/* Board Side */
+.board-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.player-name {
+    font-family: monospace;
+    margin-bottom: 5px;
+    font-size: 1.2rem;
+}
+
+.players-info {
+    display: flex;
+    justify-content: space-around;
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+.player-label {
+    font-family: monospace;
+}
+
+.board-wrapper {
+    display: flex;
+    justify-content: center;
+}
+
+.game-controls {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.game-button {
+    padding: 6px 12px;
+    font-family: monospace;
+    cursor: pointer;
+    background-color: #f5f5f5;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.game-button:hover:not(:disabled) {
+    background-color: #e0e0e0;
+}
+
+.game-button.disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Editor Side */
+.editor-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.editor-wrapper {
+    flex-grow: 1;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    overflow: hidden;
+    height: calc(100% - 50px); /* Leave space for buttons */
+}
+
+/* Override CodeEditor's default height */
+.editor-wrapper > div {
+    height: 100% !important;
+}
+
+.editor-controls {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.editor-button {
+    padding: 6px 15px;
+    font-family: monospace;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.save-button {
+    background-color: #f0f0f0;
+    border: 1px solid #ccc;
+}
+
+.compile-button {
+    background-color: #FF69B4;
+    color: white;
+    border: none;
+}
+
+.editor-button:hover:not(:disabled) {
+    opacity: 0.9;
+}
+
+/* Error display */
+.error-container {
+    margin-top: 15px;
+    padding: 10px;
+    background-color: #ffebee;
+    border: 1px solid #ffcdd2;
+    border-radius: 4px;
+    font-family: monospace;
+    width: 90%;
+    max-width: 650px;
+}
+
+.error-title {
+    color: #d32f2f;
+    margin-bottom: 5px;
+}
+
+.error-message {
+    color: #555;
+    display: block;
+    white-space: pre-wrap;
+    overflow-x: auto;
+    max-height: 6em;
+    overflow-y: auto;
+}

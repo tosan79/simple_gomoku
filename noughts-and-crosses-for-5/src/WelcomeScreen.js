@@ -61,22 +61,23 @@ function WelcomeScreen() {
     //     if (isValidNickname) {
     //         setShowModes(true);
     //     }
+    //
     // };
 
     const expandModes = async () => {
         if (!nickname.trim()) {
-            alert('podaj nazwę gracza');
+            alert("podaj nazwę gracza");
             return;
         }
 
         try {
             const isValidNickname = await checkNickname(nickname);
-                if (isValidNickname) {
-                    setShowModes(true);
-                }
+            if (isValidNickname) {
+                setShowModes(true);
+            }
         } catch (error) {
-            console.error('Error checking nickname:', error);
-            alert('Błąd podczas sprawdzania nazwy gracza');
+            console.error("Error checking nickname:", error);
+            alert("Błąd podczas sprawdzania nazwy gracza");
         }
 
         // if (!classroom) {
@@ -147,7 +148,6 @@ function WelcomeScreen() {
             return;
         }
         setShowUploadSection(true);
-
     };
 
     const handleFileChange = async (event) => {
@@ -256,7 +256,18 @@ function WelcomeScreen() {
                         >
                             nazwa gracza:
                         </label>
-                        <input
+                        <span
+                            style={{
+                                width: "200px",
+                                marginLeft: "10px",
+                                fontFamily: "monospace",
+                                fontWeight: "bold",
+                                padding: "2px 0",
+                            }}
+                        >
+                            {nickname}
+                        </span>
+                        {/* <input
                             id="nickname"
                             type="text"
                             value={nickname}
@@ -266,7 +277,7 @@ function WelcomeScreen() {
                                 // localStorage.setItem("nickname", newNickname);
                             }}
                             style={{ width: "200px", marginLeft: "10px" }}
-                        />
+                        /> */}
                     </div>
 
                     <div
@@ -290,15 +301,26 @@ function WelcomeScreen() {
                             >
                                 klasa:
                             </label>
-                            <input
+                            <span
+                                style={{
+                                    width: "30px",
+                                    marginLeft: "5px",
+                                    fontFamily: "monospace",
+                                    fontWeight: "bold",
+                                    padding: "2px 0",
+                                }}
+                            >
+                                {classroom || ""}
+                            </span>
+                            {/* <input
                                 id="klasa"
                                 type="text"
                                 value={classroom}
                                 onChange={(e) => setClassroom(e.target.value)}
                                 style={{ width: "30px", marginLeft: "5px" }}
-                            />
+                            /> */}
                         </div>
-                        <span
+                        {/* <span
                             style={{
                                 marginTop: "5px",
                                 fontSize: "10px",
@@ -307,7 +329,7 @@ function WelcomeScreen() {
                             }}
                         >
                             (opcjonalnie)
-                        </span>
+                        </span> */}
                     </div>
                 </div>
 

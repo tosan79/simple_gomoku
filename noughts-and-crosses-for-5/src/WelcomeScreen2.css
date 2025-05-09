@@ -1,0 +1,100 @@
+.welcome-container {
+    padding: 20px;
+    max-width: 800px;
+    margin: 0 auto;
+    font-family: Arial, sans-serif;
+}
+
+.user-info-bar {
+    background-color: #f5f5f5;
+    padding: 10px 20px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.user-details {
+    display: flex;
+    gap: 20px;
+}
+
+.user-details span {
+    font-family: monospace;
+}
+
+.intro-section {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 30px;
+}
+
+.intro-section h2 {
+    color: #333;
+    margin-bottom: 15px;
+    font-family: monospace;
+}
+
+.intro-section p, .intro-section ul {
+    color: #555;
+    line-height: 1.6;
+    font-family: monospace;
+}
+
+.intro-section ul {
+    padding-left: 20px;
+    margin: 15px 0;
+}
+
+.intro-section strong {
+    color: #FF69B4;
+}
+
+.navigation-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.nav-button {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 5px;
+    font-family: monospace;
+    font-size: 16px;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.nav-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.nav-button.training {
+    /* background-color: #4CAF50; */
+    background-color: #FF69B4;
+    color: white;
+}
+
+.nav-button.competition {
+    background-color: #333;
+    color: deeppink;
+}
+
+.leaderboard-section {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.leaderboard-section h3 {
+    color: #FF69B4;
+    margin-bottom: 15px;
+    font-family: monospace;
+}

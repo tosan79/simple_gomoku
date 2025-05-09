@@ -1,3 +1,15 @@
-1. go live (github setup)
-2. classrooms
-3.
+("-" - to do / "✓" - done)
+
+- go live
+    - ✓ git setup
+    - azure
+    - bez nginx
+
+- ekran początek
+    -
+
+- ekran trening
+
+- ekran admin
+
+- ekran zawody

@@ -1,13 +1,27 @@
 import React, { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import Board from "./Board";
 import "./Screens.css";
-import "./BackButton.css"
+import "./BackButton.css";
 
 function FirstScreen() {
     const location = useLocation();
-    const navigate = useNavigate();
-    const { nickname } = location.state || {};
+    // const navigate = useNavigate();
+    const nickname = location.state?.nickname || "";
+    // const classroom = location.state?.classroom;
+
+    // useEffect(() => {
+    //   console.log("Location state:", location.state);
+    // }, [location.state]);
+
+    // Debug log to see what's being passed
+    // useEffect(() => {
+    //     console.log("Location state:", location.state);
+    //     // Handle classroom if it's an object
+    //     if (classroom && typeof classroom === 'object') {
+    //         console.log("Classroom is an object:", classroom);
+    //     }
+    // }, [location.state, classroom]);
     const [opponents, setOpponents] = useState([]);
     const [selectedOpponent, setSelectedOpponent] = useState("");
     const [board, setBoard] = useState(
@@ -258,11 +272,22 @@ function FirstScreen() {
                         }}
                     >
                         <option value="">wybierz przeciwnika</option>
-                        {opponents.map((opponent) => (
-                            <option key={opponent} value={opponent}>
-                                {opponent}
-                            </option>
-                        ))}
+                        {opponents.map((opponent) => {
+                            // Check if opponent is an object or string
+                            const opponentValue =
+                                typeof opponent === "object"
+                                    ? opponent.name || JSON.stringify(opponent)
+                                    : opponent;
+
+                            return (
+                                <option
+                                    key={opponentValue}
+                                    value={opponentValue}
+                                >
+                                    {opponentValue}
+                                </option>
+                            );
+                        })}
                     </select>
                     <div>
                         {piecesAssigned
@@ -285,7 +310,6 @@ function FirstScreen() {
                     board={board}
                     interactive={true}
                     winningCells={winningCells}
-                    lastMove={lastMove}
                 />
             </div>
             <div>

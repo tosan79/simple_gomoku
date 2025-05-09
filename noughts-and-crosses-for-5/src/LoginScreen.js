@@ -36,9 +36,10 @@ function LoginScreen() {
                     "user",
                     JSON.stringify({
                         username: data.username,
-                        role: data.role,
+                        role: data.role
                     }),
                 );
+                localStorage.setItem("token", data.token);
 
                 // Redirect based on role
                 if (data.role === "admin") {

@@ -801,14 +801,16 @@ function TestMode() {
                         flex: 1,
                         display: "flex",
                         flexDirection: "column",
+                        height: "calc(100vh - 100px)", // Set a taller height based on viewport
                     }}
                 >
                     <div
                         style={{
-                            height: "400px",
+                            flex: 1, // Make it use all available space
                             border: "1px solid #ccc",
                             borderRadius: "4px",
                             overflow: "hidden",
+                            marginBottom: "15px", // Space for buttons
                         }}
                     >
                         <CodeEditor code={code} onChange={handleCodeChange} />

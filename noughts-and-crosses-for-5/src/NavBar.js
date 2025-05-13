@@ -1,40 +1,92 @@
-import React from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useState } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import "./NavBar.css";
 
 const NavBar = ({ variant = "full" }) => {
     const navigate = useNavigate();
-    const loginStyle = { color: "#FF69B4" };
+    const location = useLocation();
+    const userData = JSON.parse(localStorage.getItem("user")) || {};
+    const [showTrainingDropdown, setShowTrainingDropdown] = useState(false);
+
+    // If variant is "empty", don't render the navbar at all
+    if (variant === "empty") {
+        return null;
+    }
 
     const handleLogout = () => {
         localStorage.removeItem("user");
         navigate("/");
     };
 
+    const toggleTrainingDropdown = () => {
+        setShowTrainingDropdown(!showTrainingDropdown);
+    };
+
     return (
         <nav className="navbar">
             {/* Only show logo in full or logo-only variants */}
-
-            {(variant === "full" || variant === "logo-only") && (
-                <div className="navbar-logo">
-                    CodinGomoku
-                    {/* <Link to="/">CodinGomoku</Link> */}
-                </div>
-            )}
+            <div className="navbar-logo">CodinGomoku</div>
 
             {variant === "full" && (
                 <ul className="navbar-menu">
                     <li>
-                        <Link to="/welcome">Początek</Link>
+                        <Link
+                            to="/welcome"
+                            state={{ returnedNickname: userData.username }}
+                        >
+                            Początek
+                        </Link>
                     </li>
                     <li>
-                        <Link to="/x">Jak grać?</Link>
+                        <a href="rules.html">Jak grać?</a>
+                        {/* <Link to="/x" state={{ nickname: userData.username }}>
+                            Jak grać?
+                        </Link> */}
+                    </li>
+                    <li className="dropdown">
+                        <div
+                            className="dropdown-trigger"
+                            onClick={toggleTrainingDropdown}
+                        >
+                            Trening {/* <span className="dropdown-arrow">▼</span> */}
+                        </div>
+                        {showTrainingDropdown && (
+                            <ul className="dropdown-menu">
+                                <li>
+                                    <Link
+                                        to="/test"
+                                        state={{ nickname: userData.username }}
+                                        onClick={() =>
+                                            setShowTrainingDropdown(false)
+                                        }
+                                    >
+                                        Testowanie
+                                    </Link>
+                                </li>
+                                <li>
+                                    <Link
+                                        to="/first"
+                                        state={{ nickname: userData.username }}
+                                        onClick={() =>
+                                            setShowTrainingDropdown(false)
+                                        }
+                                    >
+                                        Pojedynek
+                                    </Link>
+                                </li>
+                            </ul>
+                        )}
                     </li>
                     <li>
-                        <Link to="/test">Trening</Link>
-                    </li>
-                    <li>
-                        <Link to="/first">Zawody</Link>
+                        <li>
+                            <a href="/zawody.html">Zawody</a>
+                        </li>
+                        {/* <Link
+                            to="/first" // Keep this as a separate nav item or change as needed
+                            state={{ nickname: userData.username }}
+                        >
+                            Zawody
+                        </Link> */}
                     </li>
                     <button
                         onClick={handleLogout}

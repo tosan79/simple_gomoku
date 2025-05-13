@@ -304,7 +304,7 @@ function TestMode() {
                 <h3 className="player-name">{nickname}</h3>
                 <div className="players-info">
                     <div className="player-label">
-                        {piecesAssigned ? `Ty (${selectedPiece})` : "Ty"}
+                        {piecesAssigned ? `mysz (${selectedPiece})` : "mysz"}
                     </div>
                     <div className="player-label">
                         {piecesAssigned

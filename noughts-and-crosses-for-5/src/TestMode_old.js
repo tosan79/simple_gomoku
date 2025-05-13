@@ -704,7 +704,7 @@ function TestMode() {
                         }}
                     >
                         <div style={{ fontFamily: "monospace" }}>
-                            {piecesAssigned ? `Ty (${selectedPiece})` : "Ty"}
+                            {piecesAssigned ? `mysz (${selectedPiece})` : "mysz"}
                         </div>
                         <div style={{ fontFamily: "monospace" }}>
                             {piecesAssigned

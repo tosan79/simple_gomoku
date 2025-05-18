@@ -36,7 +36,8 @@ function LoginScreen() {
                     "user",
                     JSON.stringify({
                         username: data.username,
-                        role: data.role
+                        classroom: data.classroom,
+                        role: data.role,
                     }),
                 );
                 localStorage.setItem("token", data.token);
@@ -46,7 +47,10 @@ function LoginScreen() {
                     navigate("/admin");
                 } else {
                     navigate("/welcome", {
-                        state: { returnedNickname: username },
+                        state: {
+                            returnedNickname: username,
+                            classroom: data.classroom,
+                        },
                     });
                 }
             } else {
@@ -99,9 +103,11 @@ function LoginScreen() {
                 </form>
 
                 <p className="login-footer">
-                    jeśli nie masz konta, {" "}
-                    <span onClick={() => navigate("/register")}
-                        classname="register-link">
+                    jeśli nie masz konta,{" "}
+                    <span
+                        onClick={() => navigate("/register")}
+                        className="register-link"
+                    >
                         zarejestruj się
                     </span>
                 </p>

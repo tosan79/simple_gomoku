@@ -7,15 +7,15 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key';
 const SALT_ROUNDS = 10;
 
 // User operations
-const createUser = async (username, password, role = 'student') => {
+const createUser = async (username, password, role = 'student', classroom = null) => {
     try {
         // Hash the password
         const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
 
         // Insert the user
         const result = await dbRun(
-            'INSERT INTO users (username, password, role) VALUES (?, ?, ?)',
-            [username, hashedPassword, role]
+            'INSERT INTO users (username, password, role, classroom) VALUES (?, ?, ?, ?)',
+            [username, hashedPassword, role, classroom]
         );
 
         return { id: result.id, username, role };

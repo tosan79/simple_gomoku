@@ -29,26 +29,29 @@ const NavBar = ({ variant = "full" }) => {
 
             {variant === "full" && (
                 <ul className="navbar-menu">
+                    {location.pathname !== "/welcome" && (
+                        <li>
+                            <Link
+                                to="/welcome"
+                                state={{ returnedNickname: userData.username }}
+                            >
+                                Początek
+                            </Link>
+                        </li>
+                    )}
                     <li>
-                        <Link
-                            to="/welcome"
-                            state={{ returnedNickname: userData.username }}
-                        >
-                            Początek
-                        </Link>
-                    </li>
-                    <li>
-                        <a href="rules.html">Jak grać?</a>
-                        {/* <Link to="/x" state={{ nickname: userData.username }}>
+                        {/* <a href="rules.html">Jak grać?</a> */}
+                        <Link to="/howtoplay" state={{ nickname: userData.username }}>
                             Jak grać?
-                        </Link> */}
+                        </Link>
                     </li>
                     <li className="dropdown">
                         <div
                             className="dropdown-trigger"
                             onClick={toggleTrainingDropdown}
                         >
-                            Trening {/* <span className="dropdown-arrow">▼</span> */}
+                            Nauka{" "}
+                            {/* <span className="dropdown-arrow">▼</span> */}
                         </div>
                         {showTrainingDropdown && (
                             <ul className="dropdown-menu">
@@ -60,7 +63,7 @@ const NavBar = ({ variant = "full" }) => {
                                             setShowTrainingDropdown(false)
                                         }
                                     >
-                                        Testowanie
+                                        Trening
                                     </Link>
                                 </li>
                                 <li>
@@ -78,15 +81,15 @@ const NavBar = ({ variant = "full" }) => {
                         )}
                     </li>
                     <li>
-                        <li>
+                        {/* <li>
                             <a href="/zawody.html">Zawody</a>
-                        </li>
-                        {/* <Link
-                            to="/first" // Keep this as a separate nav item or change as needed
+                        </li> */}
+                        <Link
+                            to="/competition" // Keep this as a separate nav item or change as needed
                             state={{ nickname: userData.username }}
                         >
                             Zawody
-                        </Link> */}
+                        </Link>
                     </li>
                     <button
                         onClick={handleLogout}

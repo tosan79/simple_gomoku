@@ -116,6 +116,50 @@ const dbAll = (sql, params = []) => {
     });
 };
 
+const addForeignKeyConstraint = async () => {
+    try {
+        // Enable foreign keys
+        await dbRun('PRAGMA foreign_keys = ON;');
+
+        // Begin transaction
+        await dbRun('BEGIN TRANSACTION;');
+
+        // Create new table with constraint
+        await dbRun(`
+            CREATE TABLE users_new (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT NOT NULL UNIQUE,
+                password TEXT NOT NULL,
+                role TEXT NOT NULL DEFAULT 'student',
+                classroom TEXT DEFAULT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (classroom) REFERENCES rooms(room_id) ON DELETE SET NULL ON UPDATE CASCADE
+            );
+        `);
+
+        // Copy data
+        await dbRun(`
+            INSERT INTO users_new (id, username, password, role, classroom, created_at)
+            SELECT id, username, password, role, classroom, created_at FROM users;
+        `);
+
+        // Drop old table
+        await dbRun('DROP TABLE users;');
+
+        // Rename new table
+        await dbRun('ALTER TABLE users_new RENAME TO users;');
+
+        // Commit transaction
+        await dbRun('COMMIT;');
+
+        console.log('Foreign key constraint added successfully');
+    } catch (error) {
+        // Rollback on error
+        await dbRun('ROLLBACK;');
+        console.error('Error adding foreign key constraint:', error);
+    }
+};
+
 module.exports = {
     db,
     dbRun,

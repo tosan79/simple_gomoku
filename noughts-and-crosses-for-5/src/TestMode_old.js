@@ -4,7 +4,7 @@ import Board from "./Board";
 import CodeEditor from "./CodeEditor";
 // import HelpPanel from "./HelpPanel";
 // import "./BackButton.css";
-import "./TestMode.css"
+import "./TestMode.css";
 
 function TestMode() {
     const location = useLocation();
@@ -51,12 +51,12 @@ function TestMode() {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        "Authorization": localStorage.getItem("token")
+                        Authorization: localStorage.getItem("token"),
                     },
                     body: JSON.stringify({
                         nickname,
                         code,
-                        localStorage
+                        localStorage,
                     }),
                 },
             );
@@ -651,6 +651,38 @@ function TestMode() {
     //     </div>
     // );
 
+    const handleSaveClick = async () => {
+        try {
+            // We'll use the compile endpoint but add a flag to indicate we're just saving
+            const response = await fetch(
+                "http://localhost:4000/api/compile-code",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: localStorage.getItem("token"),
+                    },
+                    body: JSON.stringify({
+                        nickname,
+                        code,
+                        saveOnly: true, // Add this flag
+                    }),
+                },
+            );
+
+            if (response.ok) {
+                console.log("Code saved successfully");
+                // You could add a small visual indicator here that save was successful
+            } else {
+                const data = await response.json();
+                throw new Error(data.error || "Failed to save code");
+            }
+        } catch (error) {
+            console.error("Error saving code:", error);
+            alert("Błąd podczas zapisywania kodu: " + error.message);
+        }
+    };
+
     return (
         <div>
             {/* <div
@@ -704,12 +736,14 @@ function TestMode() {
                         }}
                     >
                         <div style={{ fontFamily: "monospace" }}>
-                            {piecesAssigned ? `mysz (${selectedPiece})` : "mysz"}
+                            {piecesAssigned
+                                ? `mysz (${selectedPiece})`
+                                : "mysz"}
                         </div>
                         <div style={{ fontFamily: "monospace" }}>
                             {piecesAssigned
-                                ? `Twój program (${otherPiece})`
-                                : "Twój program"}
+                                ? `kod (${otherPiece})`
+                                : "kod"}
                         </div>
                     </div>
                     <Board
@@ -801,7 +835,7 @@ function TestMode() {
                         flex: 1,
                         display: "flex",
                         flexDirection: "column",
-                        height: "calc(100vh - 100px)", // Set a taller height based on viewport
+                        height: "100%", // Set a taller height based on viewport
                     }}
                 >
                     <div
@@ -811,6 +845,8 @@ function TestMode() {
                             borderRadius: "4px",
                             overflow: "hidden",
                             marginBottom: "15px", // Space for buttons
+                            display: "flex",
+                            flexDirection: "column",
                         }}
                     >
                         <CodeEditor code={code} onChange={handleCodeChange} />
@@ -821,27 +857,42 @@ function TestMode() {
                             display: "flex",
                             justifyContent: "center", // Center the buttons
                             marginTop: "15px", // Add some space between editor and buttons
+                            // gap: "10px"
                         }}
                     >
+                        <button
+                            onClick={handleSaveClick}
+                            disabled={isCompiling}
+                            style={{
+                                padding: "8px 16px",
+                                fontFamily: "monospace",
+                                cursor: "pointer",
+                                backgroundColor: "#f0f0f0",
+                                border: "1px solid #ccc",
+                                borderRadius: "4px",
+                                marginRight: "20px", // Add some space between buttons
+                            }}
+                        >
+                            zapisz
+                        </button>
+
                         <button
                             onClick={handleCompileClick}
                             disabled={isCompiling}
                             style={{
-                                padding: "8px 16px", // Slightly larger padding
+                                padding: "8px 16px",
                                 fontFamily: "monospace",
                                 cursor: isCompiling ? "wait" : "pointer",
-                                backgroundColor: "#FF69B4", // Pink background
-                                color: "white", // White text
+                                backgroundColor: "#FF69B4", // Pink for compile
+                                color: "white",
                                 border: "none",
                                 borderRadius: "4px",
                             }}
                         >
-                            {isCompiling
-                                ? "kompilacja..."
-                                : "zapisz & kompiluj"}
+                            {isCompiling ? "kompilacja..." : "kompiluj"}
                         </button>
 
-                        <button
+                        {/* <button
                             onClick={() => {
                                 const element = document.createElement("a");
                                 const file = new Blob([code], {
@@ -864,7 +915,7 @@ function TestMode() {
                             }}
                         >
                             pobierz kod
-                        </button>
+                        </button> */}
                     </div>
                 </div>
 

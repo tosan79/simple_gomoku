@@ -169,6 +169,7 @@ app.post("/api/login", async (req, res) => {
                 message: "Login successful",
                 username: user.username,
                 role: user.role,
+                classroom: user.classroom,
                 token
             });
         } else {
@@ -188,7 +189,7 @@ app.post("/api/login", async (req, res) => {
 });
 
 app.post("/api/register", async (req, res) => {
-    const { username, password, role = "student" } = req.body;
+    const { username, password, role = "student", classroom } = req.body;
 
     try {
         // Check if username already exists
@@ -202,7 +203,7 @@ app.post("/api/register", async (req, res) => {
         }
 
         // Create new user
-        await createUser(username, password, role);
+        await createUser(username, password, role, classroom);
 
         res.json({
             success: true,
@@ -1005,6 +1006,66 @@ app.use((err, req, res, next) => {
         error: 'Server error',
         message: process.env.NODE_ENV === 'production' ? 'An unexpected error occurred' : err.message
     });
+});
+
+// Update user classroom assignment
+app.put("/api/admin/users/:userId/classroom", authenticateAdmin, async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const { classroom } = req.body;
+
+        // Validate the classroom exists if it's provided
+        if (classroom) {
+            const roomExists = await dbGet('SELECT * FROM rooms WHERE room_id = ?', [classroom]);
+            if (!roomExists) {
+                return res.status(400).json({ error: 'invalid classroom id' });
+            }
+        }
+
+        await dbRun(
+            'UPDATE users SET classroom = ? WHERE id = ?',
+            [classroom || null, userId]
+        );
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error updating user classroom:', error);
+        res.status(500).json({ error: 'failed to update user classroom' });
+    }
+});
+
+// Start a tournament for a classroom
+app.post("/api/admin/start-tournament", authenticateAdmin, async (req, res) => {
+    try {
+        const { roomId } = req.body;
+
+        if (!roomId) {
+            return res.status(400).json({ error: 'Room ID is required' });
+        }
+
+        // Get all programs in this room
+        const programs = await dbAll('SELECT name FROM programs WHERE room_id = ?', [roomId]);
+
+        if (programs.length < 2) {
+            return res.status(400).json({ error: 'Need at least 2 programs to start a tournament' });
+        }
+
+        // Schedule games between all programs
+        const totalGames = programs.length * (programs.length - 1);
+
+        // In a real implementation, you would start these games and track results
+        // For now, we'll just return success
+
+        res.json({
+            success: true,
+            message: 'Tournament started',
+            totalGames,
+            programs: programs.map(p => p.name)
+        });
+    } catch (error) {
+        console.error('Error starting tournament:', error);
+        res.status(500).json({ error: 'Failed to start tournament' });
+    }
 });
 
 const PORT = process.env.PORT || 4000;

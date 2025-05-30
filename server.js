@@ -228,6 +228,23 @@ app.post("/api/admin/login", (req, res) => {
     }
 });
 
+app.get("/api/admin/programs/classroom-counts", authenticateAdmin, async (req, res) => {
+    try {
+        const counts = await dbAll(`
+            SELECT u.classroom, COUNT(*) as count
+            FROM programs p
+            JOIN users u ON p.owner_id = u.id
+            WHERE u.classroom IS NOT NULL
+            GROUP BY u.classroom
+        `);
+
+        res.json({ counts });
+    } catch (error) {
+        console.error('Error fetching program counts by classroom:', error);
+        res.status(500).json({ error: 'Failed to fetch program counts' });
+    }
+});
+
 // ROOM MANAGEMENT
 app.get("/api/admin/rooms", authenticateAdmin, async (req, res) => {
     try {
@@ -254,6 +271,10 @@ app.post("/api/admin/rooms", authenticateAdmin, async (req, res) => {
             return res.status(400).json({ error: 'Room ID already exists' });
         }
 
+        const student_count = await dbGet(
+            'SELECT COUNT(*) FROM users'
+        )
+
         const result = await dbRun(
             'INSERT INTO rooms (room_id, description, created_by) VALUES (?, ?, ?)',
             [roomId, description, req.user.id]
@@ -264,6 +285,22 @@ app.post("/api/admin/rooms", authenticateAdmin, async (req, res) => {
     } catch (error) {
         console.error('Error creating room:', error);
         res.status(500).json({ error: 'Failed to create room' });
+    }
+});
+
+app.get("/api/admin/rooms/student-counts", authenticateAdmin, async (req, res) => {
+    try {
+        const counts = await dbAll(`
+            SELECT classroom, COUNT(*) as count
+            FROM users
+            WHERE classroom IS NOT NULL
+            GROUP BY classroom
+        `);
+
+        res.json({ counts });
+    } catch (error) {
+        console.error('Error fetching classroom counts:', error);
+        res.status(500).json({ error: 'Failed to fetch classroom student counts' });
     }
 });
 
@@ -729,7 +766,8 @@ app.get("/api/get-code/:nickname", (req, res) => {
 
 app.post("/api/compile-code", authenticate, async (req, res) => {
     try {
-        const { nickname, code, room } = req.body;
+        const { nickname, code } = req.body;
+        // room parameter is removed since we're not storing it
 
         if (!nickname || !code) {
             return res.status(400).json({ error: "Nickname and code are required" });
@@ -748,16 +786,16 @@ app.post("/api/compile-code", authenticate, async (req, res) => {
         const existingProgram = await dbGet('SELECT * FROM programs WHERE name = ?', [nickname]);
 
         if (existingProgram) {
-            // Update existing program
+            // Update existing program - note no room_id
             await dbRun(
-                'UPDATE programs SET code = ?, room_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-                [code, room || null, existingProgram.id]
+                'UPDATE programs SET code = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+                [code, existingProgram.id]
             );
         } else {
-            // Create new program
+            // Create new program - note no room_id
             await dbRun(
-                'INSERT INTO programs (name, code, owner_id, room_id, compiled_path) VALUES (?, ?, ?, ?, ?)',
-                [nickname, code, req.user.id, room || null, compiledPath]
+                'INSERT INTO programs (name, code, owner_id, compiled_path) VALUES (?, ?, ?, ?)',
+                [nickname, code, req.user.id, compiledPath]
             );
         }
 
@@ -785,11 +823,15 @@ app.get("/api/get-opponents", async (req, res) => {
     try {
         const { room } = req.query;
 
-        let query = 'SELECT name, room_id FROM programs';
+        let query = `
+            SELECT p.name, p.owner_id, u.classroom
+            FROM programs p
+            INNER JOIN users u ON p.owner_id = u.id
+        `;
         let params = [];
 
         if (room) {
-            query += ' WHERE room_id = ?';
+            query += ' WHERE u.classroom = ?';
             params.push(room);
         }
 
@@ -797,7 +839,7 @@ app.get("/api/get-opponents", async (req, res) => {
 
         const opponents = programs.map(program => ({
             name: program.name,
-            room: program.room_id
+            room: program.classroom
         }));
 
         res.json({ opponents });
@@ -926,7 +968,7 @@ app.put("/api/profile/password", authenticate, async (req, res) => {
 app.get("/api/admin/users", authenticateAdmin, async (req, res) => {
     try {
         // Don't return passwords in the query
-        const users = await dbAll('SELECT id, username, role, created_at FROM users');
+        const users = await dbAll('SELECT id, username, role, created_at, classroom FROM users');
         res.json({ users });
     } catch (error) {
         console.error('Error fetching users:', error);
@@ -1043,28 +1085,80 @@ app.post("/api/admin/start-tournament", authenticateAdmin, async (req, res) => {
             return res.status(400).json({ error: 'Room ID is required' });
         }
 
-        // Get all programs in this room
-        const programs = await dbAll('SELECT name FROM programs WHERE room_id = ?', [roomId]);
+        // Get all programs whose owners belong to this classroom
+        const programs = await dbAll(`
+            SELECT p.name, p.id
+            FROM programs p
+            JOIN users u ON p.owner_id = u.id
+            WHERE u.classroom = ?
+        `, [roomId]);
 
         if (programs.length < 2) {
             return res.status(400).json({ error: 'Need at least 2 programs to start a tournament' });
         }
 
-        // Schedule games between all programs
-        const totalGames = programs.length * (programs.length - 1);
+        // Create a tournament record in database
+        const result = await dbRun(
+            'INSERT INTO tournaments (room_id, status, total_matches, created_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)',
+            [roomId, 'in_progress', programs.length * (programs.length - 1)]
+        );
 
-        // In a real implementation, you would start these games and track results
-        // For now, we'll just return success
+        const tournamentId = result.id;
+
+        // Schedule all matches between programs
+        const programNames = programs.map(p => p.name);
+        const totalMatches = programNames.length * (programNames.length - 1);
+
+        // Here you would actually schedule the matches
+        // For now, we'll just return success with the tournament ID
 
         res.json({
             success: true,
             message: 'Tournament started',
-            totalGames,
-            programs: programs.map(p => p.name)
+            tournamentId,
+            totalMatches,
+            programs: programNames
         });
+
+        // In a real implementation, you would start a background process to run all the matches
+        // and update the tournament status as they complete
     } catch (error) {
         console.error('Error starting tournament:', error);
         res.status(500).json({ error: 'Failed to start tournament' });
+    }
+});
+
+app.get("/api/admin/tournaments/:id/status", authenticateAdmin, async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const tournament = await dbGet(
+            'SELECT * FROM tournaments WHERE id = ?',
+            [id]
+        );
+
+        if (!tournament) {
+            return res.status(404).json({ error: 'Tournament not found' });
+        }
+
+        // Calculate progress percentage
+        const progress = tournament.total_matches > 0
+            ? Math.round((tournament.completed_matches / tournament.total_matches) * 100)
+            : 0;
+
+        res.json({
+            id: tournament.id,
+            roomId: tournament.room_id,
+            status: tournament.status,
+            progress,
+            totalMatches: tournament.total_matches,
+            completedMatches: tournament.completed_matches,
+            createdAt: tournament.created_at,
+            completedAt: tournament.completed_at
+        });
+    } catch (error) {
+        console.error('Error getting tournament status:', error);
+        res.status(500).json({ error: 'Failed to get tournament status' });
     }
 });
 

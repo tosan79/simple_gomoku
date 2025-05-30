@@ -160,6 +160,60 @@ const addForeignKeyConstraint = async () => {
     }
 };
 
+db.run(`
+    CREATE TABLE IF NOT EXISTS tournaments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        room_id TEXT NOT NULL,
+        status TEXT NOT NULL,
+        total_matches INTEGER NOT NULL,
+        completed_matches INTEGER DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        completed_at TIMESTAMP,
+        FOREIGN KEY (room_id) REFERENCES rooms (room_id)
+    )
+`);
+
+db.run(`
+    CREATE TABLE IF NOT EXISTS tournaments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        room_id TEXT NOT NULL,
+        status TEXT NOT NULL,
+        total_matches INTEGER NOT NULL,
+        completed_matches INTEGER DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        completed_at TIMESTAMP,
+        FOREIGN KEY (room_id) REFERENCES rooms (room_id)
+    )
+`);
+
+db.run(`
+    CREATE TABLE IF NOT EXISTS tournament_matches (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        tournament_id INTEGER NOT NULL,
+        player1 TEXT NOT NULL,
+        player2 TEXT NOT NULL,
+        winner TEXT,
+        moves TEXT,
+        status TEXT DEFAULT 'pending',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        completed_at TIMESTAMP,
+        FOREIGN KEY (tournament_id) REFERENCES tournaments (id)
+    )
+`);
+
+db.run(`
+    CREATE TABLE IF NOT EXISTS tournament_results (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        tournament_id INTEGER NOT NULL,
+        player TEXT NOT NULL,
+        wins INTEGER DEFAULT 0,
+        losses INTEGER DEFAULT 0,
+        draws INTEGER DEFAULT 0,
+        points REAL DEFAULT 0,
+        FOREIGN KEY (tournament_id) REFERENCES tournaments (id)
+    )
+`);
+
 module.exports = {
     db,
     dbRun,

@@ -18,15 +18,17 @@ const AdminNavBar = () => {
             {/* Centered admin panel title */}
             <div
                 style={{
-                    position: "absolute",
-                    left: "50%",
-                    transform: "translateX(-50%)",
+                    // position: "absolute",
+                    // left: "60%",
+                    // transform: "translateX(-50%)",
+                    display: "flex",
+                    justifyContent: "space-evenly",
                     color: "#FF69B4", // Pink color
                     fontWeight: "bold",
                     fontSize: "1.1em"
                 }}
             >
-                panel administratora
+                // pokój nauczycielski
             </div>
 
             <ul className="navbar-menu">

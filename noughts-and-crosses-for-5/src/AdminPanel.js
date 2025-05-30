@@ -13,6 +13,15 @@ function AdminPanel() {
     const [newRoom, setNewRoom] = useState({ roomId: '', description: '' });
     const [selectedUser, setSelectedUser] = useState(null);
     const [selectedRoomForUser, setSelectedRoomForUser] = useState('');
+    const [selectedRoomForTournament, setSelectedRoomForTournament] = useState('');
+    const [studentCounts, setStudentCounts] = useState({});
+    const [programCounts, setProgramCounts] = useState({}); // New state for program counts
+    const [tournamentStatus, setTournamentStatus] = useState({
+        inProgress: false,
+        id: null,
+        progress: 0,
+        message: ''
+    });
     const navigate = useNavigate();
 
     // Check if user is admin
@@ -35,7 +44,9 @@ function AdminPanel() {
             await Promise.all([
                 fetchUsers(),
                 fetchRooms(),
-                fetchPrograms()
+                fetchPrograms(),
+                fetchStudentCounts(),
+                fetchProgramCounts() // Add this new function call
             ]);
         } catch (err) {
             setError("wystąpił błąd podczas pobierania danych");
@@ -90,6 +101,51 @@ function AdminPanel() {
         setPrograms(data.opponents || []);
     };
 
+    const fetchStudentCounts = async () => {
+        const response = await fetch('http://localhost:4000/api/admin/rooms/student-counts', {
+            headers: {
+                'Authorization': localStorage.getItem('token')
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('failed to fetch student counts');
+        }
+
+        const data = await response.json();
+
+        // Convert array to object for easy lookup
+        const countsMap = {};
+        data.counts.forEach(item => {
+            countsMap[item.classroom] = item.count;
+        });
+
+        setStudentCounts(countsMap);
+    };
+
+    // New function to fetch program counts by classroom
+    const fetchProgramCounts = async () => {
+        const response = await fetch('http://localhost:4000/api/admin/programs/classroom-counts', {
+            headers: {
+                'Authorization': localStorage.getItem('token')
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('failed to fetch program counts');
+        }
+
+        const data = await response.json();
+
+        // Convert array to object for easy lookup
+        const countsMap = {};
+        data.counts.forEach(item => {
+            countsMap[item.classroom] = item.count;
+        });
+
+        setProgramCounts(countsMap);
+    };
+
     // Create a new classroom
     const handleCreateRoom = async (e) => {
         e.preventDefault();
@@ -142,6 +198,8 @@ function AdminPanel() {
             await fetchRooms();
             // Also refresh users since their classroom assignments might be affected
             await fetchUsers();
+            await fetchStudentCounts();
+            await fetchProgramCounts(); // Refresh program counts too
         } catch (error) {
             setError(error.message);
         }
@@ -152,7 +210,6 @@ function AdminPanel() {
         if (!selectedUser) return;
 
         try {
-            // We'll create a custom endpoint for this
             const response = await fetch(`http://localhost:4000/api/admin/users/${selectedUser.id}/classroom`, {
                 method: 'PUT',
                 headers: {
@@ -170,10 +227,117 @@ function AdminPanel() {
             }
 
             await fetchUsers();
+            await fetchStudentCounts();
+            await fetchProgramCounts(); // Also refresh program counts
             setSelectedUser(null);
             setSelectedRoomForUser('');
         } catch (error) {
             setError(error.message);
+        }
+    };
+
+    // Start a tournament
+    const handleStartTournament = async () => {
+        if (!selectedRoomForTournament) return;
+
+        if (!window.confirm(`czy na pewno chcesz rozpocząć zawody dla klasy "${selectedRoomForTournament}"?`)) {
+            return;
+        }
+
+        try {
+            // First, get all the programs in this room (by user's classroom)
+            const roomPrograms = programs.filter(p => p.room === selectedRoomForTournament);
+
+            if (roomPrograms.length < 2) {
+                setError("potrzeba co najmniej 2 programów w klasie do przeprowadzenia zawodów");
+                return;
+            }
+
+            setTournamentStatus({
+                inProgress: true,
+                id: null,
+                progress: 0,
+                message: 'rozpoczynanie zawodów...'
+            });
+
+            const response = await fetch('http://localhost:4000/api/admin/start-tournament', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': localStorage.getItem('token')
+                },
+                body: JSON.stringify({ roomId: selectedRoomForTournament }),
+            });
+
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.error || 'nie udało się rozpocząć zawodów');
+            }
+
+            const data = await response.json();
+
+            setTournamentStatus({
+                inProgress: true,
+                id: data.tournamentId,
+                progress: 5,
+                message: `zawody rozpoczęte. ${data.totalMatches} gier do rozegrania.`
+            });
+
+            // Start polling for tournament progress
+            pollTournamentStatus(data.tournamentId);
+        } catch (error) {
+            setError(error.message);
+            setTournamentStatus({
+                inProgress: false,
+                id: null,
+                progress: 0,
+                message: ''
+            });
+        }
+    };
+
+    // Poll for tournament status updates
+    const pollTournamentStatus = async (tournamentId) => {
+        try {
+            const response = await fetch(`http://localhost:4000/api/admin/tournaments/${tournamentId}/status`, {
+                headers: {
+                    'Authorization': localStorage.getItem('token')
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('nie udało się pobrać statusu zawodów');
+            }
+
+            const data = await response.json();
+
+            setTournamentStatus(prev => ({
+                ...prev,
+                progress: data.progress,
+                message: data.status === 'completed'
+                    ? 'zawody zakończone!'
+                    : `w trakcie... ${data.progress}% ukończone`
+            }));
+
+            // If tournament is still in progress, poll again after 5 seconds
+            if (data.status === 'in_progress') {
+                setTimeout(() => pollTournamentStatus(tournamentId), 5000);
+            } else {
+                // Tournament is completed or failed
+                setTournamentStatus(prev => ({
+                    ...prev,
+                    inProgress: false,
+                    message: data.status === 'completed'
+                        ? 'zawody zakończone!'
+                        : `błąd: ${data.error || 'wystąpił problem podczas zawodów'}`
+                }));
+            }
+        } catch (error) {
+            console.error('Error polling tournament status:', error);
+            setTournamentStatus(prev => ({
+                ...prev,
+                message: `błąd: ${error.message}`
+            }));
         }
     };
 
@@ -185,8 +349,6 @@ function AdminPanel() {
             </>
         );
     }
-
-
 
     return (
         <>
@@ -205,6 +367,9 @@ function AdminPanel() {
                         </li>
                         <li className={activeTab === 'programs' ? 'active' : ''} onClick={() => setActiveTab('programs')}>
                             programy
+                        </li>
+                        <li className={activeTab === 'tournaments' ? 'active' : ''} onClick={() => setActiveTab('tournaments')}>
+                            zawody
                         </li>
                         <li onClick={() => navigate('/welcome')}>
                             powrót do aplikacji
@@ -232,12 +397,6 @@ function AdminPanel() {
                                     <div className="admin-stat-value">{programs.length}</div>
                                 </div>
                             </div>
-
-                            {/* <h3>szybkie akcje</h3>
-                            <div className="admin-quick-actions">
-                                <button onClick={() => setActiveTab('users')}>zarządzaj użytkownikami</button>
-                                <button onClick={() => setActiveTab('rooms')}>zarządzaj klasami</button>
-                            </div> */}
                         </div>
                     )}
 
@@ -375,32 +534,30 @@ function AdminPanel() {
                                             <th>utworzono przez</th>
                                             <th>data utworzenia</th>
                                             <th>liczba uczniów</th>
+                                            <th>liczba programów</th> {/* New column */}
                                             <th>akcje</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {rooms.map(room => {
-                                            const studentsCount = users.filter(user => user.classroom === room.room_id).length;
-
-                                            return (
-                                                <tr key={room.id}>
-                                                    <td>{room.id}</td>
-                                                    <td>{room.room_id}</td>
-                                                    <td>{room.description || '-'}</td>
-                                                    <td>{room.created_by_username || '-'}</td>
-                                                    <td>{new Date(room.created_at).toLocaleString()}</td>
-                                                    <td>{studentsCount}</td>
-                                                    <td>
-                                                        <button
-                                                            onClick={() => handleDeleteRoom(room.room_id)}
-                                                            className="admin-delete-button"
-                                                        >
-                                                            usuń
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })}
+                                        {rooms.map(room => (
+                                            <tr key={room.id}>
+                                                <td>{room.id}</td>
+                                                <td>{room.room_id}</td>
+                                                <td>{room.description || '-'}</td>
+                                                <td>{room.created_by_username || '-'}</td>
+                                                <td>{new Date(room.created_at).toLocaleString()}</td>
+                                                <td>{studentCounts[room.room_id] || 0}</td>
+                                                <td>{programCounts[room.room_id] || 0}</td> {/* New cell */}
+                                                <td>
+                                                    <button
+                                                        onClick={() => handleDeleteRoom(room.room_id)}
+                                                        className="admin-delete-button"
+                                                    >
+                                                        usuń
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
                                     </tbody>
                                 </table>
                             </div>
@@ -428,6 +585,61 @@ function AdminPanel() {
                                         ))}
                                     </tbody>
                                 </table>
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'tournaments' && (
+                        <div className="admin-tournaments">
+                            <h2>zawody klasowe</h2>
+
+                            <div className="admin-section">
+                                <h3>rozpocznij nowe zawody</h3>
+                                <p>wybierz klasę, dla której chcesz przeprowadzić zawody</p>
+
+                                <div className="admin-form-row">
+                                    <label>klasa:</label>
+                                    <select
+                                        value={selectedRoomForTournament}
+                                        onChange={(e) => setSelectedRoomForTournament(e.target.value)}
+                                        disabled={tournamentStatus.inProgress}
+                                    >
+                                        <option value="">-- wybierz klasę --</option>
+                                        {rooms.map(room => {
+                                            const programsInRoom = programs.filter(p => p.room === room.room_id);
+
+                                            return (
+                                                <option
+                                                    key={room.id}
+                                                    value={room.room_id}
+                                                    disabled={programsInRoom.length < 2}
+                                                >
+                                                    {room.room_id} ({programsInRoom.length} programów)
+                                                </option>
+                                            );
+                                        })}
+                                    </select>
+                                </div>
+
+                                <button
+                                    className="tournament-button"
+                                    onClick={handleStartTournament}
+                                    disabled={!selectedRoomForTournament || tournamentStatus.inProgress}
+                                >
+                                    rozpocznij zawody
+                                </button>
+
+                                {tournamentStatus.inProgress && (
+                                    <div className="tournament-status">
+                                        <p>{tournamentStatus.message}</p>
+                                        <div className="tournament-progress">
+                                            <div
+                                                className="tournament-progress-bar"
+                                                style={{width: `${tournamentStatus.progress}%`}}
+                                            ></div>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     )}

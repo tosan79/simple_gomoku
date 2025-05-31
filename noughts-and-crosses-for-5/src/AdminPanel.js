@@ -1,41 +1,52 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import AdminNavBar from './AdminNavBar';
-import './AdminPanel.css';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import AdminNavBar from "./AdminNavBar";
+import "./AdminPanel.css";
 
 function AdminPanel() {
-    const [activeTab, setActiveTab] = useState('dashboard');
+    const [activeTab, setActiveTab] = useState("dashboard");
     const [users, setUsers] = useState([]);
     const [rooms, setRooms] = useState([]);
     const [programs, setPrograms] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [newRoom, setNewRoom] = useState({ roomId: '', description: '' });
+    const [newRoom, setNewRoom] = useState({ roomId: "", description: "" });
     const [selectedUser, setSelectedUser] = useState(null);
-    const [selectedRoomForUser, setSelectedRoomForUser] = useState('');
-    const [selectedRoomForTournament, setSelectedRoomForTournament] = useState('');
+    const [selectedRoomForUser, setSelectedRoomForUser] = useState("");
+    const [selectedRoomForTournament, setSelectedRoomForTournament] =
+        useState("");
     const [studentCounts, setStudentCounts] = useState({});
     const [programCounts, setProgramCounts] = useState({}); // New state for program counts
     const [tournamentStatus, setTournamentStatus] = useState({
         inProgress: false,
         id: null,
         progress: 0,
-        message: ''
+        message: "",
     });
     const navigate = useNavigate();
+    const [leaderboard, setLeaderboard] = useState([]);
+    const [roomTournaments, setRoomTournaments] = useState([]);
 
     // Check if user is admin
     useEffect(() => {
-        const user = JSON.parse(localStorage.getItem('user'));
-        const token = localStorage.getItem('token');
+        const user = JSON.parse(localStorage.getItem("user"));
+        const token = localStorage.getItem("token");
 
-        if (!token || !user || user.role !== 'admin') {
-            navigate('/login');
+        if (!token || !user || user.role !== "admin") {
+            navigate("/login");
             return;
         }
 
         fetchData();
     }, [navigate]);
+
+    useEffect(() => {
+        if (selectedRoomForTournament) {
+            fetchRoomTournaments(selectedRoomForTournament);
+        } else {
+            setRoomTournaments([]);
+        }
+    }, [selectedRoomForTournament]);
 
     const fetchData = async () => {
         setIsLoading(true);
@@ -46,7 +57,7 @@ function AdminPanel() {
                 fetchRooms(),
                 fetchPrograms(),
                 fetchStudentCounts(),
-                fetchProgramCounts() // Add this new function call
+                fetchProgramCounts(), // Add this new function call
             ]);
         } catch (err) {
             setError("wystąpił błąd podczas pobierania danych");
@@ -57,14 +68,14 @@ function AdminPanel() {
     };
 
     const fetchUsers = async () => {
-        const response = await fetch('http://localhost:4000/api/admin/users', {
+        const response = await fetch("http://localhost:4000/api/admin/users", {
             headers: {
-                'Authorization': localStorage.getItem('token')
-            }
+                Authorization: localStorage.getItem("token"),
+            },
         });
 
         if (!response.ok) {
-            throw new Error('failed to fetch users');
+            throw new Error("failed to fetch users");
         }
 
         const data = await response.json();
@@ -72,14 +83,14 @@ function AdminPanel() {
     };
 
     const fetchRooms = async () => {
-        const response = await fetch('http://localhost:4000/api/admin/rooms', {
+        const response = await fetch("http://localhost:4000/api/admin/rooms", {
             headers: {
-                'Authorization': localStorage.getItem('token')
-            }
+                Authorization: localStorage.getItem("token"),
+            },
         });
 
         if (!response.ok) {
-            throw new Error('failed to fetch rooms');
+            throw new Error("failed to fetch rooms");
         }
 
         const data = await response.json();
@@ -87,14 +98,17 @@ function AdminPanel() {
     };
 
     const fetchPrograms = async () => {
-        const response = await fetch('http://localhost:4000/api/get-opponents', {
-            headers: {
-                'Authorization': localStorage.getItem('token')
-            }
-        });
+        const response = await fetch(
+            "http://localhost:4000/api/get-opponents",
+            {
+                headers: {
+                    Authorization: localStorage.getItem("token"),
+                },
+            },
+        );
 
         if (!response.ok) {
-            throw new Error('failed to fetch programs');
+            throw new Error("failed to fetch programs");
         }
 
         const data = await response.json();
@@ -102,21 +116,24 @@ function AdminPanel() {
     };
 
     const fetchStudentCounts = async () => {
-        const response = await fetch('http://localhost:4000/api/admin/rooms/student-counts', {
-            headers: {
-                'Authorization': localStorage.getItem('token')
-            }
-        });
+        const response = await fetch(
+            "http://localhost:4000/api/admin/rooms/student-counts",
+            {
+                headers: {
+                    Authorization: localStorage.getItem("token"),
+                },
+            },
+        );
 
         if (!response.ok) {
-            throw new Error('failed to fetch student counts');
+            throw new Error("failed to fetch student counts");
         }
 
         const data = await response.json();
 
         // Convert array to object for easy lookup
         const countsMap = {};
-        data.counts.forEach(item => {
+        data.counts.forEach((item) => {
             countsMap[item.classroom] = item.count;
         });
 
@@ -125,21 +142,24 @@ function AdminPanel() {
 
     // New function to fetch program counts by classroom
     const fetchProgramCounts = async () => {
-        const response = await fetch('http://localhost:4000/api/admin/programs/classroom-counts', {
-            headers: {
-                'Authorization': localStorage.getItem('token')
-            }
-        });
+        const response = await fetch(
+            "http://localhost:4000/api/admin/programs/classroom-counts",
+            {
+                headers: {
+                    Authorization: localStorage.getItem("token"),
+                },
+            },
+        );
 
         if (!response.ok) {
-            throw new Error('failed to fetch program counts');
+            throw new Error("failed to fetch program counts");
         }
 
         const data = await response.json();
 
         // Convert array to object for easy lookup
         const countsMap = {};
-        data.counts.forEach(item => {
+        data.counts.forEach((item) => {
             countsMap[item.classroom] = item.count;
         });
 
@@ -152,24 +172,27 @@ function AdminPanel() {
         if (!newRoom.roomId.trim()) return;
 
         try {
-            const response = await fetch('http://localhost:4000/api/admin/rooms', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': localStorage.getItem('token')
+            const response = await fetch(
+                "http://localhost:4000/api/admin/rooms",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: localStorage.getItem("token"),
+                    },
+                    body: JSON.stringify({
+                        roomId: newRoom.roomId,
+                        description: newRoom.description,
+                    }),
                 },
-                body: JSON.stringify({
-                    roomId: newRoom.roomId,
-                    description: newRoom.description
-                }),
-            });
+            );
 
             if (!response.ok) {
                 const data = await response.json();
-                throw new Error(data.error || 'failed to create room');
+                throw new Error(data.error || "failed to create room");
             }
 
-            setNewRoom({ roomId: '', description: '' });
+            setNewRoom({ roomId: "", description: "" });
             await fetchRooms();
         } catch (error) {
             setError(error.message);
@@ -183,16 +206,19 @@ function AdminPanel() {
         }
 
         try {
-            const response = await fetch(`http://localhost:4000/api/admin/rooms/${roomId}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': localStorage.getItem('token')
-                }
-            });
+            const response = await fetch(
+                `http://localhost:4000/api/admin/rooms/${roomId}`,
+                {
+                    method: "DELETE",
+                    headers: {
+                        Authorization: localStorage.getItem("token"),
+                    },
+                },
+            );
 
             if (!response.ok) {
                 const data = await response.json();
-                throw new Error(data.error || 'failed to delete room');
+                throw new Error(data.error || "failed to delete room");
             }
 
             await fetchRooms();
@@ -210,27 +236,32 @@ function AdminPanel() {
         if (!selectedUser) return;
 
         try {
-            const response = await fetch(`http://localhost:4000/api/admin/users/${selectedUser.id}/classroom`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': localStorage.getItem('token')
+            const response = await fetch(
+                `http://localhost:4000/api/admin/users/${selectedUser.id}/classroom`,
+                {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: localStorage.getItem("token"),
+                    },
+                    body: JSON.stringify({
+                        classroom: selectedRoomForUser || null,
+                    }),
                 },
-                body: JSON.stringify({
-                    classroom: selectedRoomForUser || null
-                }),
-            });
+            );
 
             if (!response.ok) {
                 const data = await response.json();
-                throw new Error(data.error || 'failed to update user classroom');
+                throw new Error(
+                    data.error || "failed to update user classroom",
+                );
             }
 
             await fetchUsers();
             await fetchStudentCounts();
             await fetchProgramCounts(); // Also refresh program counts
             setSelectedUser(null);
-            setSelectedRoomForUser('');
+            setSelectedRoomForUser("");
         } catch (error) {
             setError(error.message);
         }
@@ -240,16 +271,24 @@ function AdminPanel() {
     const handleStartTournament = async () => {
         if (!selectedRoomForTournament) return;
 
-        if (!window.confirm(`czy na pewno chcesz rozpocząć zawody dla klasy "${selectedRoomForTournament}"?`)) {
+        if (
+            !window.confirm(
+                `czy na pewno chcesz rozpocząć zawody dla klasy "${selectedRoomForTournament}"?`,
+            )
+        ) {
             return;
         }
 
         try {
             // First, get all the programs in this room (by user's classroom)
-            const roomPrograms = programs.filter(p => p.room === selectedRoomForTournament);
+            const roomPrograms = programs.filter(
+                (p) => p.room === selectedRoomForTournament,
+            );
 
             if (roomPrograms.length < 2) {
-                setError("potrzeba co najmniej 2 programów w klasie do przeprowadzenia zawodów");
+                setError(
+                    "potrzeba co najmniej 2 programów w klasie do przeprowadzenia zawodów",
+                );
                 return;
             }
 
@@ -257,21 +296,26 @@ function AdminPanel() {
                 inProgress: true,
                 id: null,
                 progress: 0,
-                message: 'rozpoczynanie zawodów...'
+                message: "rozpoczynanie zawodów...",
             });
 
-            const response = await fetch('http://localhost:4000/api/admin/start-tournament', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': localStorage.getItem('token')
+            const response = await fetch(
+                "http://localhost:4000/api/admin/start-tournament",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: localStorage.getItem("token"),
+                    },
+                    body: JSON.stringify({ roomId: selectedRoomForTournament }),
                 },
-                body: JSON.stringify({ roomId: selectedRoomForTournament }),
-            });
+            );
 
             if (!response.ok) {
                 const data = await response.json();
-                throw new Error(data.error || 'nie udało się rozpocząć zawodów');
+                throw new Error(
+                    data.error || "nie udało się rozpocząć zawodów",
+                );
             }
 
             const data = await response.json();
@@ -280,7 +324,7 @@ function AdminPanel() {
                 inProgress: true,
                 id: data.tournamentId,
                 progress: 5,
-                message: `zawody rozpoczęte. ${data.totalMatches} gier do rozegrania.`
+                message: `zawody rozpoczęte. ${data.totalMatches} gier do rozegrania.`,
             });
 
             // Start polling for tournament progress
@@ -291,52 +335,85 @@ function AdminPanel() {
                 inProgress: false,
                 id: null,
                 progress: 0,
-                message: ''
+                message: "",
             });
+        }
+    };
+
+    const fetchLeaderboard = async (tournamentId) => {
+        try {
+            const response = await fetch(
+                `http://localhost:4000/api/admin/tournaments/${tournamentId}/results`,
+                {
+                    headers: {
+                        Authorization: localStorage.getItem("token"),
+                    },
+                },
+            );
+
+            if (!response.ok) {
+                throw new Error("Failed to fetch leaderboard");
+            }
+
+            const data = await response.json();
+            setLeaderboard(data.results || []);
+        } catch (error) {
+            console.error("Error fetching leaderboard:", error);
+            setError("Failed to load leaderboard");
         }
     };
 
     // Poll for tournament status updates
     const pollTournamentStatus = async (tournamentId) => {
         try {
-            const response = await fetch(`http://localhost:4000/api/admin/tournaments/${tournamentId}/status`, {
-                headers: {
-                    'Authorization': localStorage.getItem('token')
-                }
-            });
+            const response = await fetch(
+                `http://localhost:4000/api/admin/tournaments/${tournamentId}/status`,
+                {
+                    headers: {
+                        Authorization: localStorage.getItem("token"),
+                    },
+                },
+            );
 
             if (!response.ok) {
-                throw new Error('nie udało się pobrać statusu zawodów');
+                throw new Error("nie udało się pobrać statusu zawodów");
             }
 
             const data = await response.json();
 
-            setTournamentStatus(prev => ({
+            setTournamentStatus((prev) => ({
                 ...prev,
                 progress: data.progress,
-                message: data.status === 'completed'
-                    ? 'zawody zakończone!'
-                    : `w trakcie... ${data.progress}% ukończone`
+                message:
+                    data.status === "completed"
+                        ? "zawody zakończone!"
+                        : `w trakcie... ${data.progress}% ukończone`,
             }));
 
             // If tournament is still in progress, poll again after 5 seconds
-            if (data.status === 'in_progress') {
+            if (data.status === "in_progress") {
                 setTimeout(() => pollTournamentStatus(tournamentId), 5000);
             } else {
                 // Tournament is completed or failed
-                setTournamentStatus(prev => ({
+                setTournamentStatus((prev) => ({
                     ...prev,
                     inProgress: false,
-                    message: data.status === 'completed'
-                        ? 'zawody zakończone!'
-                        : `błąd: ${data.error || 'wystąpił problem podczas zawodów'}`
+                    message:
+                        data.status === "completed"
+                            ? "zawody zakończone!"
+                            : `błąd: ${data.error || "wystąpił problem podczas zawodów"}`,
                 }));
+
+                // If completed, fetch the leaderboard
+                if (data.status === "completed") {
+                    fetchLeaderboard(tournamentId);
+                }
             }
         } catch (error) {
-            console.error('Error polling tournament status:', error);
-            setTournamentStatus(prev => ({
+            console.error("Error polling tournament status:", error);
+            setTournamentStatus((prev) => ({
                 ...prev,
-                message: `błąd: ${error.message}`
+                message: `błąd: ${error.message}`,
             }));
         }
     };
@@ -350,28 +427,114 @@ function AdminPanel() {
         );
     }
 
+    const fetchRoomTournaments = async (roomId) => {
+        try {
+            const response = await fetch(
+                `http://localhost:4000/api/admin/rooms/${roomId}/tournaments`,
+                {
+                    headers: {
+                        Authorization: localStorage.getItem("token"),
+                    },
+                },
+            );
+
+            if (!response.ok) {
+                throw new Error("Failed to fetch tournaments");
+            }
+
+            const data = await response.json();
+            setRoomTournaments(data.tournaments || []);
+        } catch (error) {
+            console.error("Error fetching room tournaments:", error);
+            setError("Failed to load tournaments");
+        }
+    };
+
+    // Add this function to kill a tournament
+    const killTournament = async (tournamentId) => {
+        if (
+            !window.confirm(
+                "Czy na pewno chcesz usunąć te zawody? Ta akcja jest nieodwracalna.",
+            )
+        ) {
+            return;
+        }
+
+        try {
+            const response = await fetch(
+                `http://localhost:4000/api/admin/tournaments/${tournamentId}`,
+                {
+                    method: "DELETE",
+                    headers: {
+                        Authorization: localStorage.getItem("token"),
+                    },
+                },
+            );
+
+            if (!response.ok) {
+                throw new Error("Failed to delete tournament");
+            }
+
+            // Refresh tournaments list
+            fetchRoomTournaments(selectedRoomForTournament);
+
+            // Reset tournament status if we were viewing this tournament
+            if (tournamentStatus.id === tournamentId) {
+                setTournamentStatus({
+                    inProgress: false,
+                    id: null,
+                    progress: 0,
+                    message: "Zawody zostały anulowane",
+                });
+                setLeaderboard([]);
+            }
+        } catch (error) {
+            console.error("Error killing tournament:", error);
+            setError("Failed to delete tournament");
+        }
+    };
+
     return (
         <>
             <AdminNavBar />
             <div className="admin-container">
                 <div className="admin-sidebar">
                     <ul>
-                        <li className={activeTab === 'dashboard' ? 'active' : ''} onClick={() => setActiveTab('dashboard')}>
+                        <li
+                            className={
+                                activeTab === "dashboard" ? "active" : ""
+                            }
+                            onClick={() => setActiveTab("dashboard")}
+                        >
                             dashboard
                         </li>
-                        <li className={activeTab === 'users' ? 'active' : ''} onClick={() => setActiveTab('users')}>
+                        <li
+                            className={activeTab === "users" ? "active" : ""}
+                            onClick={() => setActiveTab("users")}
+                        >
                             użytkownicy
                         </li>
-                        <li className={activeTab === 'rooms' ? 'active' : ''} onClick={() => setActiveTab('rooms')}>
+                        <li
+                            className={activeTab === "rooms" ? "active" : ""}
+                            onClick={() => setActiveTab("rooms")}
+                        >
                             klasy
                         </li>
-                        <li className={activeTab === 'programs' ? 'active' : ''} onClick={() => setActiveTab('programs')}>
+                        <li
+                            className={activeTab === "programs" ? "active" : ""}
+                            onClick={() => setActiveTab("programs")}
+                        >
                             programy
                         </li>
-                        <li className={activeTab === 'tournaments' ? 'active' : ''} onClick={() => setActiveTab('tournaments')}>
+                        <li
+                            className={
+                                activeTab === "tournaments" ? "active" : ""
+                            }
+                            onClick={() => setActiveTab("tournaments")}
+                        >
                             zawody
                         </li>
-                        <li onClick={() => navigate('/welcome')}>
+                        <li onClick={() => navigate("/welcome")}>
                             powrót do aplikacji
                         </li>
                     </ul>
@@ -380,27 +543,33 @@ function AdminPanel() {
                 <div className="admin-content">
                     {error && <div className="admin-error">{error}</div>}
 
-                    {activeTab === 'dashboard' && (
+                    {activeTab === "dashboard" && (
                         <div className="admin-dashboard">
                             <h2>dashboard</h2>
                             <div className="admin-stats">
                                 <div className="admin-stat-card">
                                     <h3>użytkownicy</h3>
-                                    <div className="admin-stat-value">{users.length}</div>
+                                    <div className="admin-stat-value">
+                                        {users.length}
+                                    </div>
                                 </div>
                                 <div className="admin-stat-card">
                                     <h3>klasy</h3>
-                                    <div className="admin-stat-value">{rooms.length}</div>
+                                    <div className="admin-stat-value">
+                                        {rooms.length}
+                                    </div>
                                 </div>
                                 <div className="admin-stat-card">
                                     <h3>programy</h3>
-                                    <div className="admin-stat-value">{programs.length}</div>
+                                    <div className="admin-stat-value">
+                                        {programs.length}
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     )}
 
-                    {activeTab === 'users' && (
+                    {activeTab === "users" && (
                         <div className="admin-users">
                             <h2>zarządzanie użytkownikami</h2>
 
@@ -410,18 +579,35 @@ function AdminPanel() {
                                     <div className="admin-form-row">
                                         <label>użytkownik:</label>
                                         <select
-                                            value={selectedUser ? selectedUser.id : ''}
+                                            value={
+                                                selectedUser
+                                                    ? selectedUser.id
+                                                    : ""
+                                            }
                                             onChange={(e) => {
                                                 const userId = e.target.value;
-                                                const user = users.find(u => u.id.toString() === userId);
+                                                const user = users.find(
+                                                    (u) =>
+                                                        u.id.toString() ===
+                                                        userId,
+                                                );
                                                 setSelectedUser(user);
-                                                setSelectedRoomForUser(user?.classroom || '');
+                                                setSelectedRoomForUser(
+                                                    user?.classroom || "",
+                                                );
                                             }}
                                         >
-                                            <option value="">wybierz użytkownika</option>
-                                            {users.map(user => (
-                                                <option key={user.id} value={user.id}>
-                                                    {user.username} {user.classroom && `(${user.classroom})`}
+                                            <option value="">
+                                                wybierz użytkownika
+                                            </option>
+                                            {users.map((user) => (
+                                                <option
+                                                    key={user.id}
+                                                    value={user.id}
+                                                >
+                                                    {user.username}{" "}
+                                                    {user.classroom &&
+                                                        `(${user.classroom})`}
                                                 </option>
                                             ))}
                                         </select>
@@ -433,18 +619,31 @@ function AdminPanel() {
                                                 <label>klasa:</label>
                                                 <select
                                                     value={selectedRoomForUser}
-                                                    onChange={(e) => setSelectedRoomForUser(e.target.value)}
+                                                    onChange={(e) =>
+                                                        setSelectedRoomForUser(
+                                                            e.target.value,
+                                                        )
+                                                    }
                                                 >
-                                                    <option value="">brak przypisania</option>
-                                                    {rooms.map(room => (
-                                                        <option key={room.id} value={room.room_id}>
+                                                    <option value="">
+                                                        brak przypisania
+                                                    </option>
+                                                    {rooms.map((room) => (
+                                                        <option
+                                                            key={room.id}
+                                                            value={room.room_id}
+                                                        >
                                                             {room.room_id}
                                                         </option>
                                                     ))}
                                                 </select>
                                             </div>
 
-                                            <button onClick={handleUpdateUserClassroom}>
+                                            <button
+                                                onClick={
+                                                    handleUpdateUserClassroom
+                                                }
+                                            >
                                                 {selectedRoomForUser
                                                     ? `przypisz do ${selectedRoomForUser}`
                                                     : "usuń przypisanie"}
@@ -468,18 +667,29 @@ function AdminPanel() {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {users.map(user => (
+                                        {users.map((user) => (
                                             <tr key={user.id}>
                                                 <td>{user.id}</td>
                                                 <td>{user.username}</td>
                                                 <td>{user.role}</td>
-                                                <td>{user.classroom || '-'}</td>
-                                                <td>{new Date(user.created_at).toLocaleString()}</td>
+                                                <td>{user.classroom || "-"}</td>
                                                 <td>
-                                                    <button onClick={() => {
-                                                        setSelectedUser(user);
-                                                        setSelectedRoomForUser(user.classroom || '');
-                                                    }}>
+                                                    {new Date(
+                                                        user.created_at,
+                                                    ).toLocaleString()}
+                                                </td>
+                                                <td>
+                                                    <button
+                                                        onClick={() => {
+                                                            setSelectedUser(
+                                                                user,
+                                                            );
+                                                            setSelectedRoomForUser(
+                                                                user.classroom ||
+                                                                    "",
+                                                            );
+                                                        }}
+                                                    >
                                                         edytuj
                                                     </button>
                                                 </td>
@@ -491,19 +701,27 @@ function AdminPanel() {
                         </div>
                     )}
 
-                    {activeTab === 'rooms' && (
+                    {activeTab === "rooms" && (
                         <div className="admin-rooms">
                             <h2>zarządzanie klasami</h2>
 
                             <div className="admin-section">
                                 <h3>dodaj nową klasę</h3>
-                                <form onSubmit={handleCreateRoom} className="admin-form">
+                                <form
+                                    onSubmit={handleCreateRoom}
+                                    className="admin-form"
+                                >
                                     <div className="admin-form-row">
                                         <label>id klasy:</label>
                                         <input
                                             type="text"
                                             value={newRoom.roomId}
-                                            onChange={(e) => setNewRoom({...newRoom, roomId: e.target.value})}
+                                            onChange={(e) =>
+                                                setNewRoom({
+                                                    ...newRoom,
+                                                    roomId: e.target.value,
+                                                })
+                                            }
                                             required
                                             placeholder="np. 2A, 3B, itd."
                                         />
@@ -514,7 +732,12 @@ function AdminPanel() {
                                         <input
                                             type="text"
                                             value={newRoom.description}
-                                            onChange={(e) => setNewRoom({...newRoom, description: e.target.value})}
+                                            onChange={(e) =>
+                                                setNewRoom({
+                                                    ...newRoom,
+                                                    description: e.target.value,
+                                                })
+                                            }
                                             placeholder="opcjonalny opis"
                                         />
                                     </div>
@@ -534,23 +757,46 @@ function AdminPanel() {
                                             <th>utworzono przez</th>
                                             <th>data utworzenia</th>
                                             <th>liczba uczniów</th>
-                                            <th>liczba programów</th> {/* New column */}
+                                            <th>liczba programów</th>{" "}
+                                            {/* New column */}
                                             <th>akcje</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {rooms.map(room => (
+                                        {rooms.map((room) => (
                                             <tr key={room.id}>
                                                 <td>{room.id}</td>
                                                 <td>{room.room_id}</td>
-                                                <td>{room.description || '-'}</td>
-                                                <td>{room.created_by_username || '-'}</td>
-                                                <td>{new Date(room.created_at).toLocaleString()}</td>
-                                                <td>{studentCounts[room.room_id] || 0}</td>
-                                                <td>{programCounts[room.room_id] || 0}</td> {/* New cell */}
+                                                <td>
+                                                    {room.description || "-"}
+                                                </td>
+                                                <td>
+                                                    {room.created_by_username ||
+                                                        "-"}
+                                                </td>
+                                                <td>
+                                                    {new Date(
+                                                        room.created_at,
+                                                    ).toLocaleString()}
+                                                </td>
+                                                <td>
+                                                    {studentCounts[
+                                                        room.room_id
+                                                    ] || 0}
+                                                </td>
+                                                <td>
+                                                    {programCounts[
+                                                        room.room_id
+                                                    ] || 0}
+                                                </td>{" "}
+                                                {/* New cell */}
                                                 <td>
                                                     <button
-                                                        onClick={() => handleDeleteRoom(room.room_id)}
+                                                        onClick={() =>
+                                                            handleDeleteRoom(
+                                                                room.room_id,
+                                                            )
+                                                        }
                                                         className="admin-delete-button"
                                                     >
                                                         usuń
@@ -564,7 +810,7 @@ function AdminPanel() {
                         </div>
                     )}
 
-                    {activeTab === 'programs' && (
+                    {activeTab === "programs" && (
                         <div className="admin-programs">
                             <h2>programy</h2>
 
@@ -577,10 +823,10 @@ function AdminPanel() {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {programs.map(program => (
+                                        {programs.map((program) => (
                                             <tr key={program.name}>
                                                 <td>{program.name}</td>
-                                                <td>{program.room || '-'}</td>
+                                                <td>{program.room || "-"}</td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -589,32 +835,50 @@ function AdminPanel() {
                         </div>
                     )}
 
-                    {activeTab === 'tournaments' && (
+                    {activeTab === "tournaments" && (
                         <div className="admin-tournaments">
                             <h2>zawody klasowe</h2>
 
                             <div className="admin-section">
                                 <h3>rozpocznij nowe zawody</h3>
-                                <p>wybierz klasę, dla której chcesz przeprowadzić zawody</p>
+                                <p>
+                                    wybierz klasę, dla której chcesz
+                                    przeprowadzić zawody
+                                </p>
 
                                 <div className="admin-form-row">
                                     <label>klasa:</label>
                                     <select
                                         value={selectedRoomForTournament}
-                                        onChange={(e) => setSelectedRoomForTournament(e.target.value)}
+                                        onChange={(e) =>
+                                            setSelectedRoomForTournament(
+                                                e.target.value,
+                                            )
+                                        }
                                         disabled={tournamentStatus.inProgress}
                                     >
-                                        <option value="">-- wybierz klasę --</option>
-                                        {rooms.map(room => {
-                                            const programsInRoom = programs.filter(p => p.room === room.room_id);
+                                        <option value="">
+                                            -- wybierz klasę --
+                                        </option>
+                                        {rooms.map((room) => {
+                                            const programsInRoom =
+                                                programs.filter(
+                                                    (p) =>
+                                                        p.room === room.room_id,
+                                                );
 
                                             return (
                                                 <option
                                                     key={room.id}
                                                     value={room.room_id}
-                                                    disabled={programsInRoom.length < 2}
+                                                    disabled={
+                                                        programsInRoom.length <
+                                                        2
+                                                    }
                                                 >
-                                                    {room.room_id} ({programsInRoom.length} programów)
+                                                    {room.room_id} (
+                                                    {programsInRoom.length}{" "}
+                                                    programów)
                                                 </option>
                                             );
                                         })}
@@ -624,7 +888,10 @@ function AdminPanel() {
                                 <button
                                     className="tournament-button"
                                     onClick={handleStartTournament}
-                                    disabled={!selectedRoomForTournament || tournamentStatus.inProgress}
+                                    disabled={
+                                        !selectedRoomForTournament ||
+                                        tournamentStatus.inProgress
+                                    }
                                 >
                                     rozpocznij zawody
                                 </button>
@@ -635,12 +902,218 @@ function AdminPanel() {
                                         <div className="tournament-progress">
                                             <div
                                                 className="tournament-progress-bar"
-                                                style={{width: `${tournamentStatus.progress}%`}}
+                                                style={{
+                                                    width: `${tournamentStatus.progress}%`,
+                                                }}
                                             ></div>
                                         </div>
                                     </div>
                                 )}
+
+                                {tournamentStatus.inProgress === false &&
+                                    leaderboard.length > 0 && (
+                                        <div className="tournament-leaderboard">
+                                            <h3>Wyniki zawodów</h3>
+                                            <table className="admin-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Miejsce</th>
+                                                        <th>Program</th>
+                                                        <th>Punkty</th>
+                                                        <th>Wygrane</th>
+                                                        <th>Remisy</th>
+                                                        <th>Przegrane</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {leaderboard.map(
+                                                        (result, index) => (
+                                                            <tr key={result.id}>
+                                                                <td>
+                                                                    {index + 1}
+                                                                </td>
+                                                                <td>
+                                                                    {
+                                                                        result.player
+                                                                    }
+                                                                </td>
+                                                                <td>
+                                                                    {
+                                                                        result.points
+                                                                    }
+                                                                </td>
+                                                                <td>
+                                                                    {
+                                                                        result.wins
+                                                                    }
+                                                                </td>
+                                                                <td>
+                                                                    {
+                                                                        result.draws
+                                                                    }
+                                                                </td>
+                                                                <td>
+                                                                    {
+                                                                        result.losses
+                                                                    }
+                                                                </td>
+                                                            </tr>
+                                                        ),
+                                                    )}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    )}
                             </div>
+
+                            {/* Tournament list section */}
+                            {selectedRoomForTournament &&
+                                roomTournaments.length > 0 && (
+                                    <div className="admin-section">
+                                        <h3>
+                                            aktywne i zakończone zawody dla
+                                            klasy {selectedRoomForTournament}
+                                        </h3>
+                                        <div className="admin-table-container">
+                                            <table className="admin-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>ID</th>
+                                                        <th>Status</th>
+                                                        <th>Postęp</th>
+                                                        <th>
+                                                            Data rozpoczęcia
+                                                        </th>
+                                                        <th>
+                                                            Data zakończenia
+                                                        </th>
+                                                        <th>Akcje</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {roomTournaments.map(
+                                                        (tournament) => {
+                                                            const progress =
+                                                                tournament.total_matches >
+                                                                0
+                                                                    ? Math.round(
+                                                                          (tournament.completed_matches /
+                                                                              tournament.total_matches) *
+                                                                              100,
+                                                                      )
+                                                                    : 0;
+
+                                                            return (
+                                                                <tr
+                                                                    key={
+                                                                        tournament.id
+                                                                    }
+                                                                >
+                                                                    <td>
+                                                                        {
+                                                                            tournament.id
+                                                                        }
+                                                                    </td>
+                                                                    <td>
+                                                                        {tournament.status ===
+                                                                        "in_progress"
+                                                                            ? "w trakcie"
+                                                                            : tournament.status ===
+                                                                                "completed"
+                                                                              ? "zakończone"
+                                                                              : tournament.status}
+                                                                    </td>
+                                                                    <td>
+                                                                        <div className="tournament-progress-small">
+                                                                            <div
+                                                                                className="tournament-progress-bar"
+                                                                                style={{
+                                                                                    width: `${progress}%`,
+                                                                                }}
+                                                                            ></div>
+                                                                            <span>
+                                                                                {
+                                                                                    progress
+                                                                                }
+
+                                                                                %
+                                                                            </span>
+                                                                        </div>
+                                                                    </td>
+                                                                    <td>
+                                                                        {new Date(
+                                                                            tournament.created_at,
+                                                                        ).toLocaleString()}
+                                                                    </td>
+                                                                    <td>
+                                                                        {tournament.completed_at
+                                                                            ? new Date(
+                                                                                  tournament.completed_at,
+                                                                              ).toLocaleString()
+                                                                            : "-"}
+                                                                    </td>
+                                                                    <td>
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                // View tournament results
+                                                                                setTournamentStatus(
+                                                                                    {
+                                                                                        inProgress:
+                                                                                            tournament.status ===
+                                                                                            "in_progress",
+                                                                                        id: tournament.id,
+                                                                                        progress:
+                                                                                            progress,
+                                                                                        message:
+                                                                                            tournament.status ===
+                                                                                            "in_progress"
+                                                                                                ? `w trakcie... ${progress}% ukończone`
+                                                                                                : "zawody zakończone!",
+                                                                                    },
+                                                                                );
+
+                                                                                // Start polling if in progress
+                                                                                if (
+                                                                                    tournament.status ===
+                                                                                    "in_progress"
+                                                                                ) {
+                                                                                    pollTournamentStatus(
+                                                                                        tournament.id,
+                                                                                    );
+                                                                                } else if (
+                                                                                    tournament.status ===
+                                                                                    "completed"
+                                                                                ) {
+                                                                                    fetchLeaderboard(
+                                                                                        tournament.id,
+                                                                                    );
+                                                                                }
+                                                                            }}
+                                                                            className="view-button"
+                                                                        >
+                                                                            pokaż
+                                                                        </button>
+
+                                                                        <button
+                                                                            onClick={() =>
+                                                                                killTournament(
+                                                                                    tournament.id,
+                                                                                )
+                                                                            }
+                                                                            className="admin-delete-button"
+                                                                        >
+                                                                            usuń
+                                                                        </button>
+                                                                    </td>
+                                                                </tr>
+                                                            );
+                                                        },
+                                                    )}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                )}
                         </div>
                     )}
                 </div>

@@ -1085,6 +1085,19 @@ app.post("/api/admin/start-tournament", authenticateAdmin, async (req, res) => {
             return res.status(400).json({ error: 'Room ID is required' });
         }
 
+        // Check if a tournament is already in progress for this room
+        const existingTournament = await dbGet(
+            'SELECT * FROM tournaments WHERE room_id = ? AND status = "in_progress"',
+            [roomId]
+        );
+
+        if (existingTournament) {
+            return res.status(400).json({
+                error: 'A tournament is already in progress for this room',
+                tournamentId: existingTournament.id
+            });
+        }
+
         // Get all programs whose owners belong to this classroom
         const programs = await dbAll(`
             SELECT p.name, p.id
@@ -1097,20 +1110,46 @@ app.post("/api/admin/start-tournament", authenticateAdmin, async (req, res) => {
             return res.status(400).json({ error: 'Need at least 2 programs to start a tournament' });
         }
 
-        // Create a tournament record in database
-        const result = await dbRun(
-            'INSERT INTO tournaments (room_id, status, total_matches, created_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)',
-            [roomId, 'in_progress', programs.length * (programs.length - 1)]
+        // Begin transaction
+        await dbRun('BEGIN TRANSACTION');
+
+        // Calculate total matches: each program plays against every other program
+        const totalMatches = programs.length * (programs.length - 1) / 2;
+
+        // Create tournament record
+        const tournamentResult = await dbRun(
+            'INSERT INTO tournaments (room_id, status, total_matches, completed_matches) VALUES (?, ?, ?, ?)',
+            [roomId, 'in_progress', totalMatches, 0]
         );
 
-        const tournamentId = result.id;
+        const tournamentId = tournamentResult.id;
 
-        // Schedule all matches between programs
+        // Schedule all matches
         const programNames = programs.map(p => p.name);
-        const totalMatches = programNames.length * (programNames.length - 1);
 
-        // Here you would actually schedule the matches
-        // For now, we'll just return success with the tournament ID
+        // Create matches (each program vs every other program)
+        for (let i = 0; i < programNames.length; i++) {
+            for (let j = i + 1; j < programNames.length; j++) {
+                await dbRun(
+                    'INSERT INTO tournament_matches (tournament_id, player1, player2, status) VALUES (?, ?, ?, ?)',
+                    [tournamentId, programNames[i], programNames[j], 'pending']
+                );
+            }
+        }
+
+        // Initialize results table with all players
+        for (const program of programNames) {
+            await dbRun(
+                'INSERT INTO tournament_results (tournament_id, player) VALUES (?, ?)',
+                [tournamentId, program]
+            );
+        }
+
+        // Commit transaction
+        await dbRun('COMMIT');
+
+        // Start the tournament in the background
+        startTournamentGames(tournamentId);
 
         res.json({
             success: true,
@@ -1119,14 +1158,164 @@ app.post("/api/admin/start-tournament", authenticateAdmin, async (req, res) => {
             totalMatches,
             programs: programNames
         });
-
-        // In a real implementation, you would start a background process to run all the matches
-        // and update the tournament status as they complete
     } catch (error) {
+        // Rollback on error
+        await dbRun('ROLLBACK');
         console.error('Error starting tournament:', error);
         res.status(500).json({ error: 'Failed to start tournament' });
     }
 });
+
+async function startTournamentGames(tournamentId) {
+    try {
+        console.log(`Starting tournament games for tournament ID ${tournamentId}`);
+
+        // Get all pending matches
+        const matches = await dbAll(
+            'SELECT * FROM tournament_matches WHERE tournament_id = ? AND status = "pending"',
+            [tournamentId]
+        );
+
+        console.log(`Found ${matches.length} pending matches`);
+
+        // Process matches one by one
+        for (const match of matches) {
+            try {
+                console.log(`Processing match: ${match.player1} vs ${match.player2}`);
+
+                // Update match status to in_progress
+                await dbRun(
+                    'UPDATE tournament_matches SET status = "in_progress" WHERE id = ?',
+                    [match.id]
+                );
+
+                // Run the actual game between the two programs
+                const gameResult = await runBotGame(match.player1, match.player2);
+
+                // Determine the winner
+                let winner = null;
+                if (gameResult.winner === 'O') {
+                    winner = match.player1;
+                } else if (gameResult.winner === 'X') {
+                    winner = match.player2;
+                }
+
+                // Update match with results
+                await dbRun(
+                    `UPDATE tournament_matches
+                     SET winner = ?,
+                         moves = ?,
+                         status = "completed",
+                         completed_at = CURRENT_TIMESTAMP
+                     WHERE id = ?`,
+                    [winner, JSON.stringify(gameResult.moves || []), match.id]
+                );
+
+                // Update tournament results
+                if (winner) {
+                    // Winner gets 3 points, update wins
+                    await dbRun(
+                        'UPDATE tournament_results SET wins = wins + 1, points = points + 3 WHERE tournament_id = ? AND player = ?',
+                        [tournamentId, winner]
+                    );
+
+                    // Loser gets 0 points, update losses
+                    const loser = winner === match.player1 ? match.player2 : match.player1;
+                    await dbRun(
+                        'UPDATE tournament_results SET losses = losses + 1 WHERE tournament_id = ? AND player = ?',
+                        [tournamentId, loser]
+                    );
+                } else {
+                    // Draw: both get 1 point
+                    await dbRun(
+                        'UPDATE tournament_results SET draws = draws + 1, points = points + 1 WHERE tournament_id = ? AND (player = ? OR player = ?)',
+                        [tournamentId, match.player1, match.player2]
+                    );
+                }
+
+                // Update tournament completed matches count
+                await dbRun(
+                    'UPDATE tournaments SET completed_matches = completed_matches + 1 WHERE id = ?',
+                    [tournamentId]
+                );
+
+                // Check if tournament is complete
+                const tournament = await dbGet(
+                    'SELECT * FROM tournaments WHERE id = ?',
+                    [tournamentId]
+                );
+
+                if (tournament.completed_matches >= tournament.total_matches) {
+                    await dbRun(
+                        'UPDATE tournaments SET status = "completed", completed_at = CURRENT_TIMESTAMP WHERE id = ?',
+                        [tournamentId]
+                    );
+                }
+
+                console.log(`Match completed: ${match.player1} vs ${match.player2}, winner: ${winner || 'draw'}`);
+
+            } catch (matchError) {
+                console.error(`Error processing match ${match.id}:`, matchError);
+
+                // Mark match as failed
+                await dbRun(
+                    'UPDATE tournament_matches SET status = "failed" WHERE id = ?',
+                    [match.id]
+                );
+            }
+        }
+
+        console.log(`Tournament ${tournamentId} processing completed`);
+
+    } catch (error) {
+        console.error(`Error processing tournament ${tournamentId}:`, error);
+    }
+}
+
+function runBotGame(player1, player2) {
+    return new Promise((resolve, reject) => {
+        try {
+            const gameProcess = spawn(
+                "python3",
+                [
+                    path.join(playingDir, "bot_interactive_judge.py"),
+                    player1,
+                    player2,
+                    "O" // First player is always O
+                ],
+                {
+                    cwd: playingDir,
+                }
+            );
+
+            let outputData = "";
+
+            gameProcess.stdout.on("data", (data) => {
+                outputData += data.toString();
+            });
+
+            gameProcess.stderr.on("data", (data) => {
+                console.log(`Bot game debug: ${data.toString()}`);
+            });
+
+            gameProcess.on("close", (code) => {
+                if (code !== 0) {
+                    reject(new Error(`Game process exited with code ${code}`));
+                    return;
+                }
+
+                try {
+                    const gameData = JSON.parse(outputData);
+                    resolve(gameData);
+                } catch (error) {
+                    reject(new Error(`Failed to parse game data: ${error.message}`));
+                }
+            });
+        } catch (error) {
+            reject(error);
+        }
+    });
+}
 
 app.get("/api/admin/tournaments/:id/status", authenticateAdmin, async (req, res) => {
     try {
@@ -1159,6 +1348,83 @@ app.get("/api/admin/tournaments/:id/status", authenticateAdmin, async (req, res)
     } catch (error) {
         console.error('Error getting tournament status:', error);
         res.status(500).json({ error: 'Failed to get tournament status' });
+    }
+});
+
+app.get("/api/admin/tournaments/:id/results", authenticateAdmin, async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const tournament = await dbGet(
+            'SELECT * FROM tournaments WHERE id = ?',
+            [id]
+        );
+
+        if (!tournament) {
+            return res.status(404).json({ error: 'Tournament not found' });
+        }
+
+        // Get results sorted by points (leaderboard)
+        const results = await dbAll(
+            `SELECT * FROM tournament_results
+             WHERE tournament_id = ?
+             ORDER BY points DESC, wins DESC`,
+            [id]
+        );
+
+        res.json({
+            tournamentId: tournament.id,
+            roomId: tournament.room_id,
+            status: tournament.status,
+            results
+        });
+    } catch (error) {
+        console.error('Error getting tournament results:', error);
+        res.status(500).json({ error: 'Failed to get tournament results' });
+    }
+});
+
+app.delete("/api/admin/tournaments/:id", authenticateAdmin, async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // Begin transaction
+        await dbRun('BEGIN TRANSACTION');
+
+        // Delete tournament matches
+        await dbRun('DELETE FROM tournament_matches WHERE tournament_id = ?', [id]);
+
+        // Delete tournament results
+        await dbRun('DELETE FROM tournament_results WHERE tournament_id = ?', [id]);
+
+        // Delete the tournament itself
+        await dbRun('DELETE FROM tournaments WHERE id = ?', [id]);
+
+        // Commit transaction
+        await dbRun('COMMIT');
+
+        res.json({ success: true, message: 'Tournament deleted successfully' });
+    } catch (error) {
+        // Rollback on error
+        await dbRun('ROLLBACK');
+        console.error('Error deleting tournament:', error);
+        res.status(500).json({ error: 'Failed to delete tournament' });
+    }
+});
+
+app.get("/api/admin/rooms/:roomId/tournaments", authenticateAdmin, async (req, res) => {
+    try {
+        const { roomId } = req.params;
+
+        const tournaments = await dbAll(
+            'SELECT * FROM tournaments WHERE room_id = ? ORDER BY created_at DESC',
+            [roomId]
+        );
+
+        res.json({ tournaments });
+    } catch (error) {
+        console.error('Error fetching tournaments:', error);
+        res.status(500).json({ error: 'Failed to fetch tournaments' });
     }
 });
 

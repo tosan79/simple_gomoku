@@ -27,6 +27,8 @@ function TestMode() {
     const [selectedPiece, setSelectedPiece] = useState(null);
     const [otherPiece, setOtherPiece] = useState(null);
     const [piecesAssigned, setPiecesAssigned] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const [isSaved, setIsSaved] = useState(false);
 
     const handleDrawPieces = () => {
         const pieces = ["O", "X"];
@@ -38,6 +40,7 @@ function TestMode() {
 
     const handleCodeChange = (newCode) => {
         setCode(newCode);
+        setIsSaved(false);
     };
 
     const handleCompileClick = async () => {
@@ -652,8 +655,8 @@ function TestMode() {
     // );
 
     const handleSaveClick = async () => {
+        setIsSaving(true);
         try {
-            // We'll use the compile endpoint but add a flag to indicate we're just saving
             const response = await fetch(
                 "http://localhost:4000/api/compile-code",
                 {
@@ -665,14 +668,14 @@ function TestMode() {
                     body: JSON.stringify({
                         nickname,
                         code,
-                        saveOnly: true, // Add this flag
+                        saveOnly: true,
                     }),
                 },
             );
 
             if (response.ok) {
                 console.log("Code saved successfully");
-                // You could add a small visual indicator here that save was successful
+                setIsSaved(true); // Mark as saved
             } else {
                 const data = await response.json();
                 throw new Error(data.error || "Failed to save code");
@@ -680,6 +683,8 @@ function TestMode() {
         } catch (error) {
             console.error("Error saving code:", error);
             alert("Błąd podczas zapisywania kodu: " + error.message);
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -741,9 +746,7 @@ function TestMode() {
                                 : "mysz"}
                         </div>
                         <div style={{ fontFamily: "monospace" }}>
-                            {piecesAssigned
-                                ? `kod (${otherPiece})`
-                                : "kod"}
+                            {piecesAssigned ? `kod (${otherPiece})` : "kod"}
                         </div>
                     </div>
                     <Board
@@ -862,18 +865,26 @@ function TestMode() {
                     >
                         <button
                             onClick={handleSaveClick}
-                            disabled={isCompiling}
+                            disabled={isSaving || isSaved}
                             style={{
                                 padding: "8px 16px",
                                 fontFamily: "monospace",
-                                cursor: "pointer",
-                                backgroundColor: "#f0f0f0",
-                                border: "1px solid #ccc",
+                                cursor: isSaved ? "default" : "pointer",
+                                backgroundColor: isSaved
+                                    ? "#e0e0e0"
+                                    : "#FF69B4", // Pink when active, gray when saved
+                                color: "white",
+                                border: "none",
                                 borderRadius: "4px",
-                                marginRight: "20px", // Add some space between buttons
+                                marginRight: "20px",
+                                opacity: isSaved ? 0.8 : 1,
                             }}
                         >
-                            zapisz
+                            {isSaving
+                                ? "zapisywanie..."
+                                : isSaved
+                                  ? "zapisano"
+                                  : "zapisz"}
                         </button>
 
                         <button

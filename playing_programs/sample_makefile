@@ -1,0 +1,16 @@
+SRC = agent.cpp
+OBJ = $(SRC:.cpp=.o)
+PRG = agent
+CC = g++
+FLAGS = -std=c++17 -Wall -g
+
+all: $(PRG)
+
+$(PRG): $(OBJ)
+	$(CC) $(OBJ) -o $(PRG) $(FLAGS)
+
+$(OBJ): $(SRC)
+	$(CC) -c $(SRC) -o $(OBJ) $(FLAGS)
+
+clean:
+	rm $(OBJ) $(PRG)

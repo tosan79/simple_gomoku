@@ -214,6 +214,10 @@ db.run(`
     )
 `);
 
+// db.run(`
+//     ALTER TABLE tournament_matches ADD COLUMN player1_piece TEXT DEFAULT 'O'
+// `);
+
 module.exports = {
     db,
     dbRun,

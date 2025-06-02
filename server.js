@@ -1085,18 +1085,13 @@ app.post("/api/admin/start-tournament", authenticateAdmin, async (req, res) => {
             return res.status(400).json({ error: 'Room ID is required' });
         }
 
-        // Check if a tournament is already in progress for this room
-        const existingTournament = await dbGet(
-            'SELECT * FROM tournaments WHERE room_id = ? AND status = "in_progress"',
-            [roomId]
-        );
+        // Begin transaction
+        await dbRun('BEGIN TRANSACTION');
 
-        if (existingTournament) {
-            return res.status(400).json({
-                error: 'A tournament is already in progress for this room',
-                tournamentId: existingTournament.id
-            });
-        }
+        // Delete any existing tournaments for this room
+        await dbRun('DELETE FROM tournament_results WHERE tournament_id IN (SELECT id FROM tournaments WHERE room_id = ?)', [roomId]);
+        await dbRun('DELETE FROM tournament_matches WHERE tournament_id IN (SELECT id FROM tournaments WHERE room_id = ?)', [roomId]);
+        await dbRun('DELETE FROM tournaments WHERE room_id = ?', [roomId]);
 
         // Get all programs whose owners belong to this classroom
         const programs = await dbAll(`
@@ -1107,14 +1102,13 @@ app.post("/api/admin/start-tournament", authenticateAdmin, async (req, res) => {
         `, [roomId]);
 
         if (programs.length < 2) {
+            await dbRun('ROLLBACK');
             return res.status(400).json({ error: 'Need at least 2 programs to start a tournament' });
         }
 
-        // Begin transaction
-        await dbRun('BEGIN TRANSACTION');
-
-        // Calculate total matches: each program plays against every other program
-        const totalMatches = programs.length * (programs.length - 1) / 2;
+        // Calculate total matches: 10 games (5 as O, 5 as X) between each pair of programs
+        const gamesPerPair = 10; // 5 as O, 5 as X
+        const totalMatches = (programs.length * (programs.length - 1) / 2) * gamesPerPair;
 
         // Create tournament record
         const tournamentResult = await dbRun(
@@ -1127,13 +1121,27 @@ app.post("/api/admin/start-tournament", authenticateAdmin, async (req, res) => {
         // Schedule all matches
         const programNames = programs.map(p => p.name);
 
-        // Create matches (each program vs every other program)
+        // Create matches (each program vs every other program, 10 times)
         for (let i = 0; i < programNames.length; i++) {
             for (let j = i + 1; j < programNames.length; j++) {
-                await dbRun(
-                    'INSERT INTO tournament_matches (tournament_id, player1, player2, status) VALUES (?, ?, ?, ?)',
-                    [tournamentId, programNames[i], programNames[j], 'pending']
-                );
+                const player1 = programNames[i];
+                const player2 = programNames[j];
+
+                // 5 games with player1 as O
+                for (let game = 0; game < 5; game++) {
+                    await dbRun(
+                        'INSERT INTO tournament_matches (tournament_id, player1, player2, player1_piece, status) VALUES (?, ?, ?, ?, ?)',
+                        [tournamentId, player1, player2, 'O', 'pending']
+                    );
+                }
+
+                // 5 games with player2 as O
+                for (let game = 0; game < 5; game++) {
+                    await dbRun(
+                        'INSERT INTO tournament_matches (tournament_id, player1, player2, player1_piece, status) VALUES (?, ?, ?, ?, ?)',
+                        [tournamentId, player1, player2, 'X', 'pending']
+                    );
+                }
             }
         }
 
@@ -1181,7 +1189,7 @@ async function startTournamentGames(tournamentId) {
         // Process matches one by one
         for (const match of matches) {
             try {
-                console.log(`Processing match: ${match.player1} vs ${match.player2}`);
+                console.log(`Processing match: ${match.player1} vs ${match.player2}, ${match.player1} plays as ${match.player1_piece}`);
 
                 // Update match status to in_progress
                 await dbRun(
@@ -1189,15 +1197,19 @@ async function startTournamentGames(tournamentId) {
                     [match.id]
                 );
 
+                // Determine which player is O and which is X
+                const player_O = match.player1_piece === 'O' ? match.player1 : match.player2;
+                const player_X = match.player1_piece === 'O' ? match.player2 : match.player1;
+
                 // Run the actual game between the two programs
-                const gameResult = await runBotGame(match.player1, match.player2);
+                const gameResult = await runBotGame(player_O, player_X);
 
                 // Determine the winner
                 let winner = null;
                 if (gameResult.winner === 'O') {
-                    winner = match.player1;
+                    winner = player_O;
                 } else if (gameResult.winner === 'X') {
-                    winner = match.player2;
+                    winner = player_X;
                 }
 
                 // Update match with results
@@ -1262,6 +1274,12 @@ async function startTournamentGames(tournamentId) {
                     'UPDATE tournament_matches SET status = "failed" WHERE id = ?',
                     [match.id]
                 );
+
+                // Update tournament completed matches count (we still need to count failed matches)
+                await dbRun(
+                    'UPDATE tournaments SET completed_matches = completed_matches + 1 WHERE id = ?',
+                    [tournamentId]
+                );
             }
         }
 
@@ -1272,20 +1290,64 @@ async function startTournamentGames(tournamentId) {
     }
 }
 
-function runBotGame(player1, player2) {
+// function runBotGame(player1, player2) {
+//     return new Promise((resolve, reject) => {
+//         try {
+//             const gameProcess = spawn(
+//                 "python3",
+//                 [
+//                     path.join(playingDir, "bot_interactive_judge.py"),
+//                     player1,
+//                     player2,
+//                     "O" // First player is always O
+//                 ],
+//                 {
+//                     cwd: playingDir,
+//                 }
+//             );
+
+//             let outputData = "";
+
+//             gameProcess.stdout.on("data", (data) => {
+//                 outputData += data.toString();
+//             });
+
+//             gameProcess.stderr.on("data", (data) => {
+//                 console.log(`Bot game debug: ${data.toString()}`);
+//             });
+
+//             gameProcess.on("close", (code) => {
+//                 if (code !== 0) {
+//                     reject(new Error(`Game process exited with code ${code}`));
+//                     return;
+//                 }
+
+//                 try {
+//                     const gameData = JSON.parse(outputData);
+//                     resolve(gameData);
+//                 } catch (error) {
+//                     reject(new Error(`Failed to parse game data: ${error.message}`));
+//                 }
+//             });
+//         } catch (error) {
+//             reject(error);
+//         }
+//     });
+// }
+function runBotGame(player_O, player_X) {
     return new Promise((resolve, reject) => {
         try {
+            console.log(`Running bot game: ${player_O} (O) vs ${player_X} (X)`);
+
             const gameProcess = spawn(
                 "python3",
                 [
                     path.join(playingDir, "bot_interactive_judge.py"),
-                    player1,
-                    player2,
-                    "O" // First player is always O
+                    player_O,  // First parameter is always O
+                    player_X,  // Second parameter is always X
+                    "O"       // This just indicates first player is O (redundant but kept for compatibility)
                 ],
-                {
-                    cwd: playingDir,
-                }
+                { cwd: playingDir }
             );
 
             let outputData = "";
@@ -1299,16 +1361,11 @@ function runBotGame(player1, player2) {
             });
 
             gameProcess.on("close", (code) => {
-                if (code !== 0) {
-                    reject(new Error(`Game process exited with code ${code}`));
-                    return;
-                }
-
                 try {
                     const gameData = JSON.parse(outputData);
                     resolve(gameData);
                 } catch (error) {
-                    reject(new Error(`Failed to parse game data: ${error.message}`));
+                    reject(new Error(`Failed to parse game data: ${error.message}, raw output: ${outputData}`));
                 }
             });
         } catch (error) {

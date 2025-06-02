@@ -444,10 +444,40 @@ function AdminPanel() {
 
             const data = await response.json();
             setRoomTournaments(data.tournaments || []);
+
+            // If there's a tournament, automatically select it
+            if (data.tournaments && data.tournaments.length > 0) {
+                const latestTournament = data.tournaments[0]; // First is most recent
+                setTournamentStatus({
+                    inProgress: latestTournament.status === "in_progress",
+                    id: latestTournament.id,
+                    progress: calculateProgress(latestTournament),
+                    message:
+                        latestTournament.status === "in_progress"
+                            ? `w trakcie... ${calculateProgress(latestTournament)}% ukończone`
+                            : "zawody zakończone!",
+                });
+
+                // If tournament is completed, fetch leaderboard
+                if (latestTournament.status === "completed") {
+                    fetchLeaderboard(latestTournament.id);
+                } else if (latestTournament.status === "in_progress") {
+                    // Start polling for in-progress tournament
+                    pollTournamentStatus(latestTournament.id);
+                }
+            }
         } catch (error) {
             console.error("Error fetching room tournaments:", error);
             setError("Failed to load tournaments");
         }
+    };
+
+    // Helper function to calculate progress
+    const calculateProgress = (tournament) => {
+        if (!tournament || tournament.total_matches === 0) return 0;
+        return Math.round(
+            (tournament.completed_matches / tournament.total_matches) * 100,
+        );
     };
 
     // Add this function to kill a tournament
@@ -1089,7 +1119,8 @@ function AdminPanel() {
                                                                                     );
                                                                                 }
                                                                             }}
-                                                                            className="view-button"
+                                                                            // className="view-button"
+                                                                            style={{ marginRight: "10px" }}
                                                                         >
                                                                             pokaż
                                                                         </button>

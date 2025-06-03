@@ -113,11 +113,26 @@ class Game:
                     print(f"Invalid move format: {move}", file=sys.stderr)
                     break
 
-            # Send complete game data
-            print(json.dumps({
+
+            result = {
                 "success": True,
-                "moves": self.moves
-            }))
+                "moves": self.moves,
+                "winner": None  # This will be set if there was a winner
+            }
+
+            # Check if the last move was a winning move
+            if self.moves:
+                last_move = self.moves[-1]
+                if "winner" in last_move:
+                    result["winner"] = last_move["winner"]
+                    if "winning_cells" in last_move:
+                        result["winning_cells"] = last_move["winning_cells"]
+            # Send complete game data
+            print(json.dumps(result))
+            # print(json.dumps({
+            #     "success": True,
+            #     "moves": self.moves
+            # }))
 
         finally:
             # Cleanup

@@ -387,7 +387,7 @@ function AdminPanel() {
                 message:
                     data.status === "completed"
                         ? "zawody zakończone!"
-                        : `w trakcie... ${data.progress}% ukończone`,
+                        : "w trakcie... " // ${data.progress}% ukończone`,
             }));
 
             // If tournament is still in progress, poll again after 5 seconds
@@ -997,7 +997,7 @@ function AdminPanel() {
                             </div>
 
                             {/* Tournament list section */}
-                            {selectedRoomForTournament &&
+                            {/* {selectedRoomForTournament &&
                                 roomTournaments.length > 0 && (
                                     <div className="admin-section">
                                         <h3>
@@ -1144,7 +1144,7 @@ function AdminPanel() {
                                             </table>
                                         </div>
                                     </div>
-                                )}
+                                )} */}
                         </div>
                     )}
                 </div>

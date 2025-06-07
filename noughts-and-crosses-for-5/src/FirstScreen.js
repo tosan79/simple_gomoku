@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom";
 import Board from "./Board";
 import "./Screens.css";
 import "./BackButton.css";
+import { API_URL } from "./config";
 
 function FirstScreen() {
     const location = useLocation();
@@ -46,7 +47,7 @@ function FirstScreen() {
 
     // Fetch available opponents when component mounts
     useEffect(() => {
-        fetch("http://localhost:4000/api/get-opponents")
+        fetch(`${API_URL}/api/get-opponents`)
             .then((response) => response.json())
             .then((data) => {
                 setOpponents(data.opponents);
@@ -73,7 +74,7 @@ function FirstScreen() {
             setLastMove(null);
 
             const response = await fetch(
-                "http://localhost:4000/api/start-bot-game",
+                `${API_URL}/api/start-bot-game`,
                 {
                     method: "POST",
                     headers: {

@@ -5,6 +5,7 @@ import CodeEditor from "./CodeEditor";
 // import HelpPanel from "./HelpPanel";
 // import "./BackButton.css";
 import "./TestMode.css";
+import { API_URL } from "./config";
 
 function TestMode() {
     const location = useLocation();
@@ -49,7 +50,7 @@ function TestMode() {
 
         try {
             const response = await fetch(
-                "http://localhost:4000/api/compile-code",
+                `${API_URL}/api/compile-code`,
                 {
                     method: "POST",
                     headers: {
@@ -143,7 +144,7 @@ function TestMode() {
             console.log("Starting game with piece:", selectedPiece); // Debug log
 
             const response = await fetch(
-                "http://localhost:4000/api/start-interactive-game",
+                `${API_URL}/api/start-interactive-game`,
                 {
                     method: "POST",
                     headers: {
@@ -181,7 +182,7 @@ function TestMode() {
 
                 // Get bot's first move
                 const initialMoveResponse = await fetch(
-                    "http://localhost:4000/api/make-move",
+                    `${API_URL}/api/make-move`,
                     {
                         method: "POST",
                         headers: {
@@ -219,7 +220,7 @@ function TestMode() {
 
     useEffect(() => {
         if (nickname) {
-            fetch(`http://localhost:4000/api/get-code/${nickname}`)
+            fetch(`${API_URL}/api/get-code/${nickname}`)
                 .then((response) => response.json())
                 .then((data) => {
                     if (data.code) {
@@ -367,7 +368,7 @@ function TestMode() {
 
         try {
             const response = await fetch(
-                "http://localhost:4000/api/make-move",
+                `${API_URL}/api/make-move`,
                 {
                     method: "POST",
                     headers: {
@@ -406,7 +407,7 @@ function TestMode() {
                 if (botMove.winning_cells) {
                     setWinningCells(botMove.winning_cells);
                 }
-                await fetch("http://localhost:4000/api/end-game", {
+                await fetch(`${API_URL}/api/end-game`, {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
@@ -658,7 +659,7 @@ function TestMode() {
         setIsSaving(true);
         try {
             const response = await fetch(
-                "http://localhost:4000/api/compile-code",
+                `${API_URL}/api/compile-code`,
                 {
                     method: "POST",
                     headers: {

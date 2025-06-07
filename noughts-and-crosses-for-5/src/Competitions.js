@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import "./WelcomeScreen2.css";
 import "./Competitions.css";
+import { API_URL } from "./config";
 
 function Competitions() {
     const [leaderboardData, setLeaderboardData] = useState(null);
@@ -15,7 +16,7 @@ function Competitions() {
     const fetchLeaderboard = async () => {
         try {
             const token = localStorage.getItem("token");
-            const response = await fetch("http://localhost:4000/api/classroom/leaderboard", {
+            const response = await fetch(`${API_URL}/api/classroom/leaderboard`, {
                 headers: {
                     Authorization: token,
                 },

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AdminNavBar from "./AdminNavBar";
 import "./AdminPanel.css";
+import { API_URL } from "./config";
 
 function AdminPanel() {
     const [activeTab, setActiveTab] = useState("dashboard");
@@ -68,7 +69,7 @@ function AdminPanel() {
     };
 
     const fetchUsers = async () => {
-        const response = await fetch("http://localhost:4000/api/admin/users", {
+        const response = await fetch(`${API_URL}/api/admin/users`, {
             headers: {
                 Authorization: localStorage.getItem("token"),
             },
@@ -83,7 +84,7 @@ function AdminPanel() {
     };
 
     const fetchRooms = async () => {
-        const response = await fetch("http://localhost:4000/api/admin/rooms", {
+        const response = await fetch(`${API_URL}/api/admin/rooms`, {
             headers: {
                 Authorization: localStorage.getItem("token"),
             },
@@ -99,7 +100,7 @@ function AdminPanel() {
 
     const fetchPrograms = async () => {
         const response = await fetch(
-            "http://localhost:4000/api/get-opponents",
+            `${API_URL}/api/get-opponents`,
             {
                 headers: {
                     Authorization: localStorage.getItem("token"),
@@ -117,7 +118,7 @@ function AdminPanel() {
 
     const fetchStudentCounts = async () => {
         const response = await fetch(
-            "http://localhost:4000/api/admin/rooms/student-counts",
+            `${API_URL}/api/admin/rooms/student-counts`,
             {
                 headers: {
                     Authorization: localStorage.getItem("token"),
@@ -143,7 +144,7 @@ function AdminPanel() {
     // New function to fetch program counts by classroom
     const fetchProgramCounts = async () => {
         const response = await fetch(
-            "http://localhost:4000/api/admin/programs/classroom-counts",
+            `${API_URL}/api/admin/programs/classroom-counts`,
             {
                 headers: {
                     Authorization: localStorage.getItem("token"),
@@ -173,7 +174,7 @@ function AdminPanel() {
 
         try {
             const response = await fetch(
-                "http://localhost:4000/api/admin/rooms",
+                `${API_URL}/api/admin/rooms`,
                 {
                     method: "POST",
                     headers: {
@@ -207,7 +208,7 @@ function AdminPanel() {
 
         try {
             const response = await fetch(
-                `http://localhost:4000/api/admin/rooms/${roomId}`,
+                `${API_URL}/api/admin/rooms/${roomId}`,
                 {
                     method: "DELETE",
                     headers: {
@@ -237,7 +238,7 @@ function AdminPanel() {
 
         try {
             const response = await fetch(
-                `http://localhost:4000/api/admin/users/${selectedUser.id}/classroom`,
+                `${API_URL}/api/admin/users/${selectedUser.id}/classroom`,
                 {
                     method: "PUT",
                     headers: {
@@ -300,7 +301,7 @@ function AdminPanel() {
             });
 
             const response = await fetch(
-                "http://localhost:4000/api/admin/start-tournament",
+                `${API_URL}/api/admin/start-tournament`,
                 {
                     method: "POST",
                     headers: {
@@ -343,7 +344,7 @@ function AdminPanel() {
     const fetchLeaderboard = async (tournamentId) => {
         try {
             const response = await fetch(
-                `http://localhost:4000/api/admin/tournaments/${tournamentId}/results`,
+                `${API_URL}/api/admin/tournaments/${tournamentId}/results`,
                 {
                     headers: {
                         Authorization: localStorage.getItem("token"),
@@ -367,7 +368,7 @@ function AdminPanel() {
     const pollTournamentStatus = async (tournamentId) => {
         try {
             const response = await fetch(
-                `http://localhost:4000/api/admin/tournaments/${tournamentId}/status`,
+                `${API_URL}/api/admin/tournaments/${tournamentId}/status`,
                 {
                     headers: {
                         Authorization: localStorage.getItem("token"),
@@ -430,7 +431,7 @@ function AdminPanel() {
     const fetchRoomTournaments = async (roomId) => {
         try {
             const response = await fetch(
-                `http://localhost:4000/api/admin/rooms/${roomId}/tournaments`,
+                `${API_URL}/api/admin/rooms/${roomId}/tournaments`,
                 {
                     headers: {
                         Authorization: localStorage.getItem("token"),
@@ -492,7 +493,7 @@ function AdminPanel() {
 
         try {
             const response = await fetch(
-                `http://localhost:4000/api/admin/tournaments/${tournamentId}`,
+                `${API_URL}/api/admin/tournaments/${tournamentId}`,
                 {
                     method: "DELETE",
                     headers: {

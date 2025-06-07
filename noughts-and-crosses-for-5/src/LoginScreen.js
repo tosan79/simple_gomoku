@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./LoginScreen.css";
+import { API_URL } from "./config";
 
 function LoginScreen() {
     const [username, setUsername] = useState("");
@@ -17,7 +18,7 @@ function LoginScreen() {
         console.log(`Attempting login with username: ${username}`); // Add debugging
 
         try {
-            const response = await fetch("http://localhost:4000/api/login", {
+            const response = await fetch(`${API_URL}/api/login`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./LoginScreen.css"; // Reuse login styling
+import { API_URL } from "./config";
 
 function RegisterScreen() {
     const [username, setUsername] = useState("");
@@ -18,7 +19,7 @@ function RegisterScreen() {
     useEffect(() => {
         const fetchRooms = async () => {
             try {
-                const response = await fetch("http://localhost:4000/api/legacy/admin/rooms");
+                const response = await fetch(`${API_URL}/api/legacy/admin/rooms`);
                 const data = await response.json();
                 if (data.rooms) {
                     setRooms(data.rooms);
@@ -60,7 +61,7 @@ function RegisterScreen() {
         setIsLoading(true);
 
         try {
-            const response = await fetch("http://localhost:4000/api/register", {
+            const response = await fetch(`${API_URL}/api/register`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

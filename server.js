@@ -6,6 +6,8 @@ const fs = require("fs");
 const { exec } = require("child_process");
 const { spawn } = require("child_process");
 const bcrypt = require("bcrypt");
+const https = require("https");
+const http = require("http");
 const activeGames = new Map();
 const { dbGet, dbRun, dbAll } = require("./db");
 const {
@@ -16,13 +18,6 @@ const {
     authenticate,
     authenticateAdmin,
 } = require("./auth");
-
-console.log("=== ENVIRONMENT DEBUG ===");
-console.log("NODE_ENV:", process.env.NODE_ENV);
-console.log("NODE_ENV type:", typeof process.env.NODE_ENV);
-console.log("NODE_ENV === 'production':", process.env.NODE_ENV === "production");
-console.log("All env keys with NODE:", Object.keys(process.env).filter(key => key.includes('NODE')));
-console.log("========================");
 
 const app = express();
 

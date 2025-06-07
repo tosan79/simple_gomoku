@@ -28,13 +28,6 @@ app.use(
     express.static(path.join(__dirname, "noughts-and-crosses-for-5", "build")),
 );
 
-// send all non-api requests to react
-app.get("*", (req, res) => {
-    res.sendFile(
-        path.join(__dirname, "noughts-and-crosses-for-5", "build", "index.html"),
-    );
-});
-
 const playingDir = path.join(__dirname, "playing_programs");
 
 const uploadDir = path.join(__dirname, "uploads");
@@ -1829,6 +1822,13 @@ app.get("/api/classroom/tournaments", authenticate, async (req, res) => {
 // app.listen(PORT, () => {
 //     console.log(`Server running on port ${PORT}`);
 // });
+
+// send all non-api requests to react
+app.get("*", (req, res) => {
+    res.sendFile(
+        path.join(__dirname, "noughts-and-crosses-for-5", "build", "index.html"),
+    );
+});
 
 if (process.env.NODE_ENV === "production") {
     try {

@@ -25,13 +25,13 @@ app.use(express.urlencoded({ extended: true }));
 
 //app.use(express.static(path.join(__dirname, "noughts-and-crosses-for-5", "public")));
 app.use(
-    express.static(path.join(__dirname, "noughts-and-crosses-for-5/build")),
+    express.static(path.join(__dirname, "noughts-and-crosses-for-5", "build")),
 );
 
 // send all non-api requests to react
 app.get("*", (req, res) => {
     res.sendFile(
-        path.join(__dirname, "noughts-and-crosses-for-5/build", "index.html"),
+        path.join(__dirname, "noughts-and-crosses-for-5", "build", "index.html"),
     );
 });
 

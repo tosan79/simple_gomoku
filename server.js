@@ -17,6 +17,13 @@ const {
     authenticateAdmin,
 } = require("./auth");
 
+console.log("=== ENVIRONMENT DEBUG ===");
+console.log("NODE_ENV:", process.env.NODE_ENV);
+console.log("NODE_ENV type:", typeof process.env.NODE_ENV);
+console.log("NODE_ENV === 'production':", process.env.NODE_ENV === "production");
+console.log("All env keys with NODE:", Object.keys(process.env).filter(key => key.includes('NODE')));
+console.log("========================");
+
 const app = express();
 
 app.use(cors());

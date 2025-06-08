@@ -1,4 +1,3 @@
-#include <initializer_list>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -37,26 +36,6 @@ class Board {
       make_move(x, y, player);
     }
 
-    void my_move(char player) {
-      for (int i = N / 2; i != N / 2 - 1; i = (i + 1) % N)
-        for (int j = N / 2; j != N / 2 - 1; j = (j + 1) % N)
-          if (board[i][j] == player)
-            for (int dx : {-1, 0, 1})
-              for (int dy : {-1, 0, 1})
-                if (i + dx >= 0 && j + dy >= 0)
-                  if (i + dx < N && j + dy < N)
-                    if (board[i + dx][j + dy] == '.') {
-                      make_move(i + dx, j + dy, player);
-                      return;
-                    }
-      random_move(player);
-    }
-
-    void do_nothing() {
-      int x = 666;
-      return;
-    } 
-
     void read_opponents_move(char player, const std::string &str) {
       std::istringstream iss(str);
       int x, y;
@@ -70,7 +49,7 @@ int main() {
   char player;
   std::string line;
 
-  std::cout << "ready" << std::endl;
+  std::cout << "ajsdygasdjygasjydaready" << std::endl;
   std::cout.flush();
 
   // first line (assign the pieces to players, 'O' goes first)
@@ -91,9 +70,8 @@ int main() {
     if (line.empty() && player == 'X') return 1;
 
     b.read_opponents_move(player, line);
-    // b.random_move(player);
-    b.my_move(player);
+    b.random_move(player);
 }
 
-  return 0;
+return 0;
 }

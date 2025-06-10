@@ -2,7 +2,7 @@
 #include <ctime>
 #include <cstdlib>
 
-#define N 10
+#define N 15
 
 class Board {
 public:

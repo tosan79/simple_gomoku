@@ -3,7 +3,7 @@
 #include <string>
 #include <sys/wait.h>
 
-#define N 10
+#define N 15
 
 class Board {
 public:

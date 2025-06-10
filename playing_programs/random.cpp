@@ -3,7 +3,7 @@
 #include <string>
 
 
-#define N 10
+#define N 15
 
 class Board {
 public:

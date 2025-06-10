@@ -3,7 +3,7 @@
 #include <sstream>
 #include <string>
 
-#define N 10
+#define N 15
 
 class Board {
   public:
@@ -55,7 +55,7 @@ class Board {
     void do_nothing() {
       int x = 666;
       return;
-    } 
+    }
 
     void read_opponents_move(char player, const std::string &str) {
       std::istringstream iss(str);

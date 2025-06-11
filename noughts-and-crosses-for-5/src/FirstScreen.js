@@ -54,9 +54,9 @@ function FirstScreen() {
             setGameEnded(false);
             setWinningCells([]);
             setBoard(
-                Array(10)
+                Array(N)
                     .fill()
-                    .map(() => Array(10).fill(" ")),
+                    .map(() => Array(N).fill(" ")),
             );
             setLastMove(null);
 

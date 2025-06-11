@@ -647,7 +647,7 @@ app.post("/api/make-move", (req, res) => {
                 // Cleanup the stuck game
                 gameProcess.kill();
                 activeGames.delete(gameId);
-            }, 5000); // 5 second timeout
+            }, 10000); // 5 second timeout
 
             // Get initial move from interactive judge
             gameProcess.stdout.once("data", (data) => {

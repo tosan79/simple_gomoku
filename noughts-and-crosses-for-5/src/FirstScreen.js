@@ -7,22 +7,7 @@ import { API_URL } from "./config";
 
 function FirstScreen() {
     const location = useLocation();
-    // const navigate = useNavigate();
     const nickname = location.state?.nickname || "";
-    // const classroom = location.state?.classroom;
-
-    // useEffect(() => {
-    //   console.log("Location state:", location.state);
-    // }, [location.state]);
-
-    // Debug log to see what's being passed
-    // useEffect(() => {
-    //     console.log("Location state:", location.state);
-    //     // Handle classroom if it's an object
-    //     if (classroom && typeof classroom === 'object') {
-    //         console.log("Classroom is an object:", classroom);
-    //     }
-    // }, [location.state, classroom]);
     const [opponents, setOpponents] = useState([]);
     const [selectedOpponent, setSelectedOpponent] = useState("");
     const [board, setBoard] = useState(

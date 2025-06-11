@@ -25,7 +25,6 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-//app.use(express.static(path.join(__dirname, "noughts-and-crosses-for-5", "public")));
 app.use(
     express.static(path.join(__dirname, "noughts-and-crosses-for-5", "build")),
 );
@@ -36,9 +35,6 @@ const uploadDir = path.join(__dirname, "uploads");
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
 }
-
-// Define a constant for the admin password instead of duplicating it
-const ADMIN_PASSWORD = "qwert"; // Change this to a secure password!
 
 function compileCode(filePath, outputPath) {
     return new Promise((resolve, reject) => {
@@ -62,7 +58,6 @@ function runGame() {
         const currentDir = process.cwd();
         const judgePath = path.join(currentDir, "playing_programs", "judge.py");
 
-        // Change working directory to where the agents are
         const command = `cd ${playingDir} && python3 ${judgePath}`;
 
         exec(command, async (error, stdout, stderr) => {
@@ -95,20 +90,6 @@ function runGame() {
     });
 }
 
-// Helper function to get program's room from the database
-async function getProgramRoom(programName) {
-    try {
-        const program = await dbGet(
-            "SELECT room_id FROM programs WHERE name = ?",
-            [programName],
-        );
-        return program ? program.room_id : null;
-    } catch (error) {
-        console.error("Error getting program room:", error);
-        return null;
-    }
-}
-
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         console.log("Saving file to:", playingDir);
@@ -136,16 +117,6 @@ const upload = multer({
         }
     },
 });
-
-// Legacy admin authentication middleware (for routes that don't use JWT)
-const legacyAuthenticateAdmin = (req, res, next) => {
-    const { password } = req.body;
-    if (password === ADMIN_PASSWORD) {
-        next();
-    } else {
-        res.status(401).json({ error: "Unauthorized" });
-    }
-};
 
 // Authentication routes
 app.post("/api/login", async (req, res) => {
@@ -225,16 +196,6 @@ app.post("/api/register", async (req, res) => {
             success: false,
             message: "Server error",
         });
-    }
-});
-
-// Support legacy admin login
-app.post("/api/admin/login", (req, res) => {
-    const { password } = req.body;
-    if (password === ADMIN_PASSWORD) {
-        res.json({ success: true });
-    } else {
-        res.status(401).json({ error: "Invalid password" });
     }
 });
 
@@ -357,53 +318,6 @@ app.get("/api/legacy/admin/rooms", (req, res) => {
         res.status(500).json({ error: "Server error" });
     }
 });
-
-app.post(
-    "/api/legacy/admin/rooms",
-    legacyAuthenticateAdmin,
-    async (req, res) => {
-        try {
-            const { roomId, description = "" } = req.body;
-
-            // Check if room already exists
-            const existingRoom = await dbGet(
-                "SELECT * FROM rooms WHERE room_id = ?",
-                [roomId],
-            );
-            if (existingRoom) {
-                return res
-                    .status(400)
-                    .json({ error: "Room ID already exists" });
-            }
-
-            // Add room to the database
-            await dbRun(
-                "INSERT INTO rooms (room_id, description) VALUES (?, ?)",
-                [roomId, description],
-            );
-
-            res.json({ success: true });
-        } catch (error) {
-            console.error("Error creating room:", error);
-            res.status(500).json({ error: "Failed to create room" });
-        }
-    },
-);
-
-app.delete(
-    "/api/legacy/admin/rooms/:roomId",
-    legacyAuthenticateAdmin,
-    async (req, res) => {
-        try {
-            const { roomId } = req.params;
-            await dbRun("DELETE FROM rooms WHERE room_id = ?", [roomId]);
-            res.json({ success: true });
-        } catch (error) {
-            console.error("Error deleting room:", error);
-            res.status(500).json({ error: "Failed to delete room" });
-        }
-    },
-);
 
 // FILE UPLOADS AND CODE MANAGEMENT
 app.post("/api/uploads", upload.single("file"), async (req, res) => {
@@ -788,9 +702,9 @@ int main() {
 
     b.read_opponents_move(player, line);
     b.random_move(player);
-}
+  }
 
-return 0;
+  return 0;
 }`;
 
 app.get("/api/get-code/:nickname", (req, res) => {

@@ -15,6 +15,7 @@ function TestMode() {
             .fill()
             .map(() => Array(N).fill(" ")),
     );
+
     const [gameId, setGameId] = useState(null);
     const [isPlayerTurn, setIsPlayerTurn] = useState(true);
     const { nickname, opponent } = location.state || {};
@@ -457,9 +458,7 @@ function TestMode() {
                                 padding: "8px 16px",
                                 fontFamily: "monospace",
                                 cursor: isSaved ? "default" : "pointer",
-                                backgroundColor: isSaved
-                                    ? "#e0e0e0"
-                                    : "#FF69B4", // Pink when active, gray when saved
+                                backgroundColor: "#FF69B4",
                                 color: "white",
                                 border: "none",
                                 borderRadius: "4px",

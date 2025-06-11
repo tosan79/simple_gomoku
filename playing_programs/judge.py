@@ -2,7 +2,7 @@ import subprocess
 import random
 import json
 
-N = 10
+N = 15
 
 class Game:
     def __init__(self):

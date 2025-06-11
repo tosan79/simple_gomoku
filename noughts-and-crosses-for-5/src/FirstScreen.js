@@ -5,15 +5,17 @@ import "./Screens.css";
 import "./BackButton.css";
 import { API_URL } from "./config";
 
+const N = 15;
+
 function FirstScreen() {
     const location = useLocation();
     const nickname = location.state?.nickname || "";
     const [opponents, setOpponents] = useState([]);
     const [selectedOpponent, setSelectedOpponent] = useState("");
     const [board, setBoard] = useState(
-        Array(10)
+        Array(N)
             .fill()
-            .map(() => Array(10).fill(" ")),
+            .map(() => Array(N).fill(" ")),
     );
     const [gameStarted, setGameStarted] = useState(false);
     const [winner, setWinner] = useState(null);
@@ -78,9 +80,9 @@ function FirstScreen() {
 
             if (data.success && data.moves && data.moves.length > 0) {
                 // Process moves one by one
-                let currentBoard = Array(10)
+                let currentBoard = Array(N)
                     .fill()
-                    .map(() => Array(10).fill(" "));
+                    .map(() => Array(N).fill(" "));
 
                 for (const move of data.moves) {
                     // Update the working copy of the board
@@ -113,9 +115,9 @@ function FirstScreen() {
 
     const handlePlayAgain = () => {
         setBoard(
-            Array(10)
+            Array(N)
                 .fill()
-                .map(() => Array(10).fill(" ")),
+                .map(() => Array(N).fill(" ")),
         );
         setGameStarted(false);
         setWinner(null);
@@ -156,59 +158,6 @@ function FirstScreen() {
             >
                 pojedynek
             </h2>
-
-            {/* <div
-                style={{
-                    padding: "20px",
-                    position: "relative",
-                    gap: "30px",
-                    alignItems: "center",
-                    marginLeft: "90px",
-                }}
-            >
-                <div
-                    style={{
-                        display: "flex",
-                        flexDirection: "row",
-                        alignContent: "center",
-                        justifyContent: "center",
-                        position: "relative",
-                    }}
-                >
-                    <div>
-                        {piecesAssigned
-                            ? `${nickname} (${selectedPiece})`
-                            : nickname}
-                    </div>
-                    <div
-                        style={{
-                            marginLeft: "50px",
-                        }}
-                    >
-                        <label htmlFor="opponent"> vs </label>
-                        <select
-                            value={selectedOpponent}
-                            onChange={(e) =>
-                                setSelectedOpponent(e.target.value)
-                            }
-                            style={{
-                                marginLeft: "50px",
-                                padding: "5px 10px",
-                                fontFamily: "monospace",
-                                cursor: "pointer",
-                                width: "140px",
-                            }}
-                        >
-                            <option value="">wybierz przeciwnika</option>
-                            {opponents.map((opponent) => (
-                                <option key={opponent} value={opponent}>
-                                    {opponent}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                </div>
-            </div> */}
 
             <div
                 style={{
@@ -382,32 +331,6 @@ function FirstScreen() {
                 </div>
             )}
 
-            {/* Back button */}
-            {/* <div
-                style={{
-                    position: "fixed",
-                    bottom: "20px",
-                    left: "20px",
-                }}
-            >
-                <button
-                    onClick={() =>
-                        navigate("/welcome", {
-                            state: { returnedNickname: nickname },
-                        })
-                    }
-                    style={{
-                        padding: "5px 10px",
-                        fontFamily: "monospace",
-                        cursor: "pointer",
-                        // backgroundColor: "#f0f0f0",
-                        // border: "1px solid #ccc",
-                        // borderRadius: "4px",
-                    }}
-                >
-                    powrót
-                </button>
-            </div> */}
         </div>
     );
 }

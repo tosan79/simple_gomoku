@@ -4,7 +4,7 @@ import sys
 # import select
 import os
 
-N = 10
+N = 15
 
 class InteractiveGame:
     def __init__(self, bot_program, player_piece='O'):

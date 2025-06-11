@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import "./Board.css";
 
-const N = 10; // Board size
+const N = 15; // Board size
 
 const Board = ({
     moves,

@@ -3,7 +3,7 @@ import sys
 import json
 import time
 
-N = 10
+N = 15
 
 class Game:
     def __init__(self, player1, player2, player1_piece):

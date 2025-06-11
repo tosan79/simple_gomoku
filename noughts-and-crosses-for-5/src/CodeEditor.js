@@ -3,7 +3,7 @@ import Editor from "@monaco-editor/react";
 // const defaultCode = `#include <iostream>
 // #include <string>
 
-// #define N 10
+// #define N 15
 
 // class Board {
 // public:
@@ -64,7 +64,7 @@ const defaultCode = `#include <iostream>
 #include <sstream>
 #include <string>
 
-#define N 10
+#define N 15
 
 class Board {
   public:

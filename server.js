@@ -543,6 +543,78 @@ app.post("/api/start-interactive-game", async (req, res) => {
     }
 });
 
+// app.post("/api/make-move", (req, res) => {
+//     const { gameId, x, y } = req.body;
+//     const gameProcess = activeGames.get(gameId);
+
+//     if (!gameProcess) {
+//         return res.status(404).json({ error: "Game not found" });
+//     }
+
+//     try {
+//         // Special case for getting initial move when player is X
+//         if (x === -1 && y === -1) {
+//             // Set up timeout for initial move
+//             const timeout = setTimeout(() => {
+//                 console.log("Initial move timeout - sending error response");
+//                 res.status(500).json({ error: "Initial move timeout" });
+//                 // Cleanup the stuck game
+//                 gameProcess.kill();
+//                 activeGames.delete(gameId);
+//             }, 10000); // 5 second timeout
+
+//             // Get initial move from interactive judge
+//             gameProcess.stdout.once("data", (data) => {
+//                 clearTimeout(timeout);
+//                 try {
+//                     const response = JSON.parse(data);
+//                     res.json(response);
+//                 } catch (error) {
+//                     console.error("Error processing initial move:", error);
+//                     res.status(500).json({
+//                         error: "Invalid response from game",
+//                     });
+//                 }
+//             });
+//             return;
+//         }
+
+//         // Regular move handling
+//         gameProcess.stdin.write(JSON.stringify({ x, y }) + "\n");
+
+//         // Set up timeout
+//         const timeout = setTimeout(() => {
+//             console.log("Move timeout - sending error response");
+//             res.status(500).json({ error: "Move timeout" });
+//             // Cleanup the stuck game
+//             gameProcess.kill();
+//             activeGames.delete(gameId);
+//         }, 5000); // 5 second timeout
+
+//         // Get response from interactive judge
+//         gameProcess.stdout.once("data", (data) => {
+//             clearTimeout(timeout);
+//             try {
+//                 const response = JSON.parse(data);
+//                 res.json(response);
+
+//                 // If there's a winner, clean up the game
+//                 if (response.winner) {
+//                     gameProcess.stdin.write("exit\n");
+//                     gameProcess.kill();
+//                     activeGames.delete(gameId);
+//                 }
+//             } catch (error) {
+//                 console.error("Error processing game response:", error);
+//                 res.status(500).json({ error: "Invalid response from game" });
+//             }
+//         });
+//     } catch (error) {
+//         console.error("Error in make-move:", error);
+//         res.status(500).json({ error: "Failed to process move" });
+//     }
+// });
+
 app.post("/api/make-move", (req, res) => {
     const { gameId, x, y } = req.body;
     const gameProcess = activeGames.get(gameId);
@@ -554,51 +626,92 @@ app.post("/api/make-move", (req, res) => {
     try {
         // Special case for getting initial move when player is X
         if (x === -1 && y === -1) {
+            console.log("Requesting initial move from bot");
+
+            let dataReceived = false;
+            let responseData = '';
+
             // Set up timeout for initial move
             const timeout = setTimeout(() => {
-                console.log("Initial move timeout - sending error response");
-                res.status(500).json({ error: "Initial move timeout" });
-                // Cleanup the stuck game
-                gameProcess.kill();
-                activeGames.delete(gameId);
-            }, 10000); // 5 second timeout
+                if (!dataReceived) {
+                    console.log("Initial move timeout - sending error response");
+                    res.status(500).json({ error: "Initial move timeout" });
+                    // Cleanup the stuck game
+                    gameProcess.kill();
+                    activeGames.delete(gameId);
+                }
+            }, 15000); // Increased timeout
 
-            // Get initial move from interactive judge
-            gameProcess.stdout.once("data", (data) => {
+            // Listen for any existing data first
+            const onData = (data) => {
+                if (dataReceived) return; // Prevent multiple responses
+
                 clearTimeout(timeout);
+                dataReceived = true;
+
                 try {
-                    const response = JSON.parse(data);
-                    res.json(response);
+                    const dataStr = data.toString().trim();
+                    console.log("Received initial move data:", dataStr);
+
+                    // Handle case where multiple JSON objects might be in the data
+                    const lines = dataStr.split('\n').filter(line => line.trim());
+                    let response = null;
+
+                    for (const line of lines) {
+                        try {
+                            const parsed = JSON.parse(line);
+                            if (parsed.x !== undefined && parsed.y !== undefined) {
+                                response = parsed;
+                                break;
+                            }
+                        } catch (e) {
+                            continue;
+                        }
+                    }
+
+                    if (response) {
+                        res.json(response);
+                    } else {
+                        res.status(500).json({ error: "Invalid initial move format" });
+                    }
                 } catch (error) {
                     console.error("Error processing initial move:", error);
-                    res.status(500).json({
-                        error: "Invalid response from game",
-                    });
+                    res.status(500).json({ error: "Invalid response from game" });
                 }
-            });
+
+                // Remove the listener after use
+                gameProcess.stdout.removeListener('data', onData);
+            };
+
+            gameProcess.stdout.on('data', onData);
+
+            // Give it a moment for any buffered data to arrive
+            setTimeout(() => {
+                if (!dataReceived) {
+                    // If no data received yet, try to trigger it
+                    console.log("No initial data received, process might be waiting");
+                }
+            }, 100);
+
             return;
         }
 
-        // Regular move handling
+        // Regular move handling (unchanged)
         gameProcess.stdin.write(JSON.stringify({ x, y }) + "\n");
 
-        // Set up timeout
         const timeout = setTimeout(() => {
             console.log("Move timeout - sending error response");
             res.status(500).json({ error: "Move timeout" });
-            // Cleanup the stuck game
             gameProcess.kill();
             activeGames.delete(gameId);
-        }, 5000); // 5 second timeout
+        }, 5000);
 
-        // Get response from interactive judge
         gameProcess.stdout.once("data", (data) => {
             clearTimeout(timeout);
             try {
                 const response = JSON.parse(data);
                 res.json(response);
 
-                // If there's a winner, clean up the game
                 if (response.winner) {
                     gameProcess.stdin.write("exit\n");
                     gameProcess.kill();

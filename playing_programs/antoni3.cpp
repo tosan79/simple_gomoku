@@ -3,7 +3,7 @@
 #include <sstream>
 #include <string>
 
-#define N 15
+#define N 10
 
 class Board {
   public:

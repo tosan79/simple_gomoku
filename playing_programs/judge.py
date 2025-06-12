@@ -126,7 +126,7 @@ class Game:
                 'moves': moves_list,
                 'first_player': 'process1' if self.curr == self.process1 else 'process2'
             }
-            with open('moves.json', 'w') as f:
+            with open('moves_demo.json', 'w') as f:
                 json.dump(game_data, f)
             assert self.process1.stdin != None
             assert self.process2.stdin != None

@@ -133,15 +133,15 @@ int main() {
 
     b.read_opponents_move(player, line);
     b.random_move(player);
-}
+  }
 
-return 0;
+  return 0;
 }`;
 
-function CodeEditor({ code, onChange }) {
+function CodeEditor({ code, onChange, height = "600px" }) {
     return (
         <Editor
-            height="600px"
+            height={height}
             defaultLanguage="cpp"
             theme="vs-dark"
             value={code || defaultCode}

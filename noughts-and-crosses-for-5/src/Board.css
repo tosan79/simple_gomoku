@@ -3,33 +3,32 @@
     border-collapse: collapse;
 }
 
-/* .cell {
-    width: 40px;
-    height: 40px;
-    text-align: center;
-    font-size: 24px;
-    border: 1px solid #000;
-    cursor: pointer;
-} */
-
 .cell {
-    width: 40px;
-    height: 40px;
+    width: 26px;    /* Zmniejszone z 40px do 26px */
+    height: 26px;   /* Zmniejszone z 40px do 26px */
     text-align: center;
-    font-size: 24px;
-    font-family: Arial, sans-serif;  /* or another font that has rounder O's */
+    font-size: 16px; /* Zmniejszone z 24px do 16px */
+    font-family: Arial, sans-serif;
     border: 1px solid #000;
     cursor: pointer;
+    vertical-align: middle;
 }
 
 .cell.last-move {
     font-weight: bold;
-    /* background-color: yellow; */
 }
 
-
 .cell.winning-cell {
-    color: #FF69B4 !important;  /* better pink #f507d1 */
+    color: #FF69B4 !important;
     font-weight: bold;
     transition: color 0.3s ease;
+}
+
+/* Dla bardzo małych ekranów */
+@media (max-width: 768px) {
+    .cell {
+        width: 20px;
+        height: 20px;
+        font-size: 14px;
+    }
 }

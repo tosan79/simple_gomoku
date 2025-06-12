@@ -50,21 +50,18 @@ function TestMode() {
         setCompilationError(null);
 
         try {
-            const response = await fetch(
-                `${API_URL}/api/compile-code`,
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: localStorage.getItem("token"),
-                    },
-                    body: JSON.stringify({
-                        nickname,
-                        code,
-                        localStorage,
-                    }),
+            const response = await fetch(`${API_URL}/api/compile-code`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: localStorage.getItem("token"),
                 },
-            );
+                body: JSON.stringify({
+                    nickname,
+                    code,
+                    localStorage,
+                }),
+            });
 
             const data = await response.json();
 
@@ -194,7 +191,6 @@ function TestMode() {
         }
     }, [nickname]);
 
-
     const handleCellClick = async (x, y) => {
         console.log("Cell clicked:", { x, y, isPlayerTurn, gameId, gameEnded }); // Debug log
 
@@ -211,16 +207,13 @@ function TestMode() {
         setIsPlayerTurn(false);
 
         try {
-            const response = await fetch(
-                `${API_URL}/api/make-move`,
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({ gameId, x, y }),
+            const response = await fetch(`${API_URL}/api/make-move`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
                 },
-            );
+                body: JSON.stringify({ gameId, x, y }),
+            });
 
             const botMove = await response.json();
             console.log("Received bot move:", botMove); // Debug log
@@ -270,21 +263,18 @@ function TestMode() {
     const handleSaveClick = async () => {
         setIsSaving(true);
         try {
-            const response = await fetch(
-                `${API_URL}/api/compile-code`,
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: localStorage.getItem("token"),
-                    },
-                    body: JSON.stringify({
-                        nickname,
-                        code,
-                        saveOnly: true,
-                    }),
+            const response = await fetch(`${API_URL}/api/compile-code`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: localStorage.getItem("token"),
                 },
-            );
+                body: JSON.stringify({
+                    nickname,
+                    code,
+                    saveOnly: true,
+                }),
+            });
 
             if (response.ok) {
                 console.log("Code saved successfully");

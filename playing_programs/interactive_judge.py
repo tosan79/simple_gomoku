@@ -1,8 +1,9 @@
 import subprocess
 import json
 import sys
-# import select
 import os
+import time
+import stat
 
 N = 15
 
@@ -20,29 +21,79 @@ class InteractiveGame:
         if not os.path.exists(bot_path):
             raise FileNotFoundError(f"Bot program not found at: {bot_path}")
 
-        self.bot_process = subprocess.Popen(
-            [bot_path],
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            text=True,
-            bufsize=1
-        )
-
-        # Wait for ready message
-        assert self.bot_process.stdout != None
-        ready = self.bot_process.stdout.readline().strip()
-        print(f"Bot says: {ready}", file=sys.stderr)
-
-        if self.bot_piece == 'O':
-            print(f"Bot plays first as O", file=sys.stderr)  # Debug log
-            assert self.bot_process.stdin != None
-            self.bot_process.stdin.write("start\n")
-            self.bot_process.stdin.flush()
-
-            # Get bot's first move
-            bot_move = self.bot_process.stdout.readline().strip()
-            print(f"Bot's first move: {bot_move}", file=sys.stderr)  # Debug log
+        # Check if the file is executable and try to make it executable if needed
+        if not os.access(bot_path, os.X_OK):
+            print(f"Bot program is not executable: {bot_path}", file=sys.stderr)
             try:
+                # Make the file executable
+                current_mode = os.stat(bot_path).st_mode
+                os.chmod(bot_path, current_mode | stat.S_IEXEC)
+                print(f"Made bot program executable", file=sys.stderr)
+            except Exception as e:
+                print(f"Could not make bot executable: {e}", file=sys.stderr)
+                raise
+
+        # Small delay to ensure file system operations are complete
+        time.sleep(0.1)
+
+        try:
+            self.bot_process = subprocess.Popen(
+                [bot_path],
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,  # Capture stderr to see bot errors
+                text=True,
+                bufsize=1
+            )
+        except Exception as e:
+            print(f"Failed to start bot process: {e}", file=sys.stderr)
+            raise
+
+        # Wait for ready message with timeout
+        try:
+            # Set a timeout for the ready message
+            import select
+            ready_list, _, _ = select.select([self.bot_process.stdout], [], [], 5.0)  # 5 second timeout
+
+            if ready_list:
+                ready = self.bot_process.stdout.readline().strip()
+                print(f"Bot says: {ready}", file=sys.stderr)
+
+                if not ready or ready != "ready":
+                    # Check if process crashed
+                    if self.bot_process.poll() is not None:
+                        stderr_output = self.bot_process.stderr.read()
+                        raise RuntimeError(f"Bot process crashed during startup. Stderr: {stderr_output}")
+                    else:
+                        raise RuntimeError(f"Bot didn't send ready message, got: '{ready}'")
+            else:
+                # Timeout occurred
+                stderr_output = self.bot_process.stderr.read()
+                raise TimeoutError(f"Bot didn't respond within 5 seconds. Stderr: {stderr_output}")
+
+        except ImportError:
+            # Fallback for systems without select (like Windows)
+            try:
+                ready = self.bot_process.stdout.readline().strip()
+                print(f"Bot says: {ready}", file=sys.stderr)
+            except Exception as e:
+                stderr_output = self.bot_process.stderr.read()
+                raise RuntimeError(f"Failed to get ready message: {e}. Stderr: {stderr_output}")
+
+        # Handle first move if bot plays as O
+        if self.bot_piece == 'O':
+            print(f"Bot plays first as O", file=sys.stderr)
+            try:
+                self.bot_process.stdin.write("start\n")
+                self.bot_process.stdin.flush()
+
+                # Get bot's first move with timeout
+                bot_move = self.bot_process.stdout.readline().strip()
+                print(f"Bot's first move: {bot_move}", file=sys.stderr)
+
+                if not bot_move:
+                    raise RuntimeError("Bot didn't provide first move")
+
                 bot_x, bot_y = map(int, bot_move.split())
                 if 0 <= bot_x < N and 0 <= bot_y < N:
                     self.board[bot_x][bot_y] = 'O'
@@ -51,9 +102,16 @@ class InteractiveGame:
                 else:
                     print(json.dumps({'error': 'Invalid bot first move coordinates'}))
                     sys.stdout.flush()
+
+            except ValueError as e:
+                print(f"Error parsing bot's first move: {str(e)}", file=sys.stderr)
+                print(json.dumps({'error': 'Invalid bot first move format'}))
+                sys.stdout.flush()
             except Exception as e:
                 print(f"Error processing bot's first move: {str(e)}", file=sys.stderr)
-                print(json.dumps({'error': 'Invalid bot first move'}))
+                stderr_output = self.bot_process.stderr.read()
+                print(f"Bot stderr: {stderr_output}", file=sys.stderr)
+                print(json.dumps({'error': 'Bot failed to make first move'}))
                 sys.stdout.flush()
 
     def check_win(self, x, y, symbol):
@@ -109,17 +167,26 @@ class InteractiveGame:
                 }
 
             # Send move to bot
-            assert self.bot_process.stdin != None
-            self.bot_process.stdin.write(f"{x} {y}\n")
-            self.bot_process.stdin.flush()
+            try:
+                self.bot_process.stdin.write(f"{x} {y}\n")
+                self.bot_process.stdin.flush()
+            except BrokenPipeError:
+                return {'error': 'Bot process crashed'}
 
-            # Get bot's response
+            # Get bot's response with retries and timeout
             MAX_ATTEMPTS = 3
             for attempt in range(MAX_ATTEMPTS):
                 try:
-                    assert self.bot_process.stdout != None
+                    # Check if bot process is still alive
+                    if self.bot_process.poll() is not None:
+                        stderr_output = self.bot_process.stderr.read()
+                        return {'error': f'Bot process died. Stderr: {stderr_output}'}
+
                     bot_move = self.bot_process.stdout.readline().strip()
                     if not bot_move:
+                        if attempt == MAX_ATTEMPTS - 1:
+                            return {'error': 'Bot failed to respond'}
+                        time.sleep(0.1)  # Brief delay before retry
                         continue
 
                     bot_x, bot_y = map(int, bot_move.split())
@@ -135,23 +202,56 @@ class InteractiveGame:
                                 'winning_cells': winning_cells
                             }
                         return {'x': bot_x, 'y': bot_y, 'winner': None}
-                except:
+                    else:
+                        if attempt == MAX_ATTEMPTS - 1:
+                            return {'error': f'Bot made invalid move: {bot_x}, {bot_y}'}
+                        time.sleep(0.1)
+                        continue
+
+                except ValueError:
                     if attempt == MAX_ATTEMPTS - 1:
-                        return {'error': 'Bot failed to respond'}
+                        stderr_output = self.bot_process.stderr.read()
+                        return {'error': f'Bot sent invalid move format: "{bot_move}". Stderr: {stderr_output}'}
+                    time.sleep(0.1)
+                    continue
+                except Exception as e:
+                    if attempt == MAX_ATTEMPTS - 1:
+                        stderr_output = self.bot_process.stderr.read()
+                        return {'error': f'Error reading bot move: {str(e)}. Stderr: {stderr_output}'}
+                    time.sleep(0.1)
                     continue
 
-            return {'error': 'Bot failed to make a valid move'}
+            return {'error': 'Bot failed to make a valid move after multiple attempts'}
 
         except Exception as e:
             print(f"Error in make_move: {str(e)}", file=sys.stderr)
             return {'error': 'Internal game error'}
 
     def cleanup(self):
-        assert self.bot_process.stdin != None
-        self.bot_process.stdin.write("end\n")
-        self.bot_process.stdin.flush()
-        self.bot_process.terminate()
-        self.bot_process.wait()
+        try:
+            if self.bot_process.poll() is None:  # Process is still running
+                self.bot_process.stdin.write("end\n")
+                self.bot_process.stdin.flush()
+
+                # Give bot a moment to clean up
+                time.sleep(0.1)
+
+            self.bot_process.terminate()
+
+            # Wait a bit for graceful termination
+            try:
+                self.bot_process.wait(timeout=2)
+            except subprocess.TimeoutExpired:
+                # Force kill if it doesn't terminate gracefully
+                self.bot_process.kill()
+                self.bot_process.wait()
+
+        except Exception as e:
+            print(f"Error during cleanup: {e}", file=sys.stderr)
+            try:
+                self.bot_process.kill()
+            except:
+                pass
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
@@ -160,13 +260,18 @@ if __name__ == "__main__":
 
     bot_program = sys.argv[1]
     player_piece = sys.argv[2]  # 'O' or 'X'
-    game = InteractiveGame(bot_program, player_piece)
+
+    try:
+        game = InteractiveGame(bot_program, player_piece)
+    except Exception as e:
+        print(json.dumps({"error": f"Failed to initialize game: {str(e)}"}))
+        sys.exit(1)
 
     try:
         while True:
             # Read move from stdin (from Node.js server)
             line = sys.stdin.readline().strip()
-            if line == "exit":
+            if line == "exit" or not line:
                 break
 
             try:
@@ -184,6 +289,11 @@ if __name__ == "__main__":
             except json.JSONDecodeError:
                 print(json.dumps({"error": "Invalid input format"}))
                 sys.stdout.flush()
+            except Exception as e:
+                print(json.dumps({"error": f"Error processing move: {str(e)}"}))
+                sys.stdout.flush()
 
+    except KeyboardInterrupt:
+        print("Game interrupted", file=sys.stderr)
     finally:
         game.cleanup()

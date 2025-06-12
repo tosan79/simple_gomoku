@@ -38,6 +38,15 @@ if (!fs.existsSync(uploadDir)) {
 
 function compileCode(filePath, outputPath) {
     return new Promise((resolve, reject) => {
+        // Remove old binary if it exists to avoid conflicts
+        if (fs.existsSync(outputPath)) {
+            try {
+                fs.unlinkSync(outputPath);
+            } catch (e) {
+                console.log("Could not remove old binary:", e.message);
+            }
+        }
+
         exec(
             `g++ ${filePath} -o ${outputPath} -std=c++17`,
             (error, stdout, stderr) => {
@@ -840,7 +849,6 @@ app.get("/api/get-code/:nickname", (req, res) => {
 app.post("/api/compile-code", authenticate, async (req, res) => {
     try {
         const { nickname, code } = req.body;
-        // room parameter is removed since we're not storing it
 
         if (!nickname || !code) {
             return res
@@ -864,13 +872,11 @@ app.post("/api/compile-code", authenticate, async (req, res) => {
         );
 
         if (existingProgram) {
-            // Update existing program - note no room_id
             await dbRun(
                 "UPDATE programs SET code = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
                 [code, existingProgram.id],
             );
         } else {
-            // Create new program - note no room_id
             await dbRun(
                 "INSERT INTO programs (name, code, owner_id, compiled_path) VALUES (?, ?, ?, ?)",
                 [nickname, code, req.user.id, compiledPath],
@@ -880,6 +886,13 @@ app.post("/api/compile-code", authenticate, async (req, res) => {
         // Compile the code
         try {
             await compileCode(filePath, compiledPath);
+
+            // ADD THIS: Make sure the compiled binary is executable and accessible
+            await fs.promises.chmod(compiledPath, 0o755);
+
+            // ADD THIS: Small delay to ensure file system operations complete
+            await new Promise(resolve => setTimeout(resolve, 100));
+
             console.log("Compilation successful");
             res.json({ success: true });
         } catch (compileError) {

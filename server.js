@@ -805,7 +805,6 @@ int main() {
   std::cout << "ready" << std::endl;
   std::cout.flush();
 
-  // first line (assign the pieces to players, 'O' goes first)
   std::getline(std::cin, line);
   if (line == "start") {
     player = 'O';

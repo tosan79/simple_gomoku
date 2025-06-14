@@ -23,8 +23,8 @@ const AppContent = () => {
         <>
             <NavBar variant={navBarVariant} />
             <Routes>
-                <Route path="/admin" element={<AdminPanel />} />
                 <Route path="/" element={<Game />} />
+                <Route path="/admin" element={<AdminPanel />} />
                 <Route path="/welcome" element={<WelcomeScreen />} />
                 <Route path="/howtoplay" element={<HowToPlay />} />
                 <Route path="/test" element={<TestMode />} />

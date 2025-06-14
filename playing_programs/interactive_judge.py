@@ -56,27 +56,32 @@ class InteractiveGame:
             ready_list, _, _ = select.select([self.bot_process.stdout], [], [], 5.0)  # 5 second timeout
 
             if ready_list:
+                assert self.bot_process.stdout != None
                 ready = self.bot_process.stdout.readline().strip()
                 print(f"Bot says: {ready}", file=sys.stderr)
 
                 if not ready or ready != "ready":
                     # Check if process crashed
                     if self.bot_process.poll() is not None:
+                        assert self.bot_process.stderr != None
                         stderr_output = self.bot_process.stderr.read()
                         raise RuntimeError(f"Bot process crashed during startup. Stderr: {stderr_output}")
                     else:
                         raise RuntimeError(f"Bot didn't send ready message, got: '{ready}'")
             else:
                 # Timeout occurred
+                assert self.bot_process.stderr != None
                 stderr_output = self.bot_process.stderr.read()
                 raise TimeoutError(f"Bot didn't respond within 5 seconds. Stderr: {stderr_output}")
 
         except ImportError:
             # Fallback for systems without select (like Windows)
             try:
+                assert self.bot_process.stdout != None
                 ready = self.bot_process.stdout.readline().strip()
                 print(f"Bot says: {ready}", file=sys.stderr)
             except Exception as e:
+                assert self.bot_process.stderr != None
                 stderr_output = self.bot_process.stderr.read()
                 raise RuntimeError(f"Failed to get ready message: {e}. Stderr: {stderr_output}")
 
@@ -84,6 +89,7 @@ class InteractiveGame:
         if self.bot_piece == 'O':
             print(f"Bot plays first as O", file=sys.stderr)
             try:
+                assert self.bot_process.stdin != None
                 self.bot_process.stdin.write("start\n")
                 self.bot_process.stdin.flush()
 
@@ -109,6 +115,7 @@ class InteractiveGame:
                 sys.stdout.flush()
             except Exception as e:
                 print(f"Error processing bot's first move: {str(e)}", file=sys.stderr)
+                assert self.bot_process.stderr != None
                 stderr_output = self.bot_process.stderr.read()
                 print(f"Bot stderr: {stderr_output}", file=sys.stderr)
                 print(json.dumps({'error': 'Bot failed to make first move'}))
@@ -168,6 +175,7 @@ class InteractiveGame:
 
             # Send move to bot
             try:
+                assert self.bot_process.stdin != None
                 self.bot_process.stdin.write(f"{x} {y}\n")
                 self.bot_process.stdin.flush()
             except BrokenPipeError:
@@ -179,9 +187,11 @@ class InteractiveGame:
                 try:
                     # Check if bot process is still alive
                     if self.bot_process.poll() is not None:
+                        assert self.bot_process.stderr != None
                         stderr_output = self.bot_process.stderr.read()
                         return {'error': f'Bot process died. Stderr: {stderr_output}'}
 
+                    assert self.bot_process.stdout != None
                     bot_move = self.bot_process.stdout.readline().strip()
                     if not bot_move:
                         if attempt == MAX_ATTEMPTS - 1:
@@ -210,12 +220,14 @@ class InteractiveGame:
 
                 except ValueError:
                     if attempt == MAX_ATTEMPTS - 1:
+                        assert self.bot_process.stderr != None
                         stderr_output = self.bot_process.stderr.read()
                         return {'error': f'Bot sent invalid move format: "{bot_move}". Stderr: {stderr_output}'}
                     time.sleep(0.1)
                     continue
                 except Exception as e:
                     if attempt == MAX_ATTEMPTS - 1:
+                        assert self.bot_process.stderr != None
                         stderr_output = self.bot_process.stderr.read()
                         return {'error': f'Error reading bot move: {str(e)}. Stderr: {stderr_output}'}
                     time.sleep(0.1)
@@ -230,6 +242,7 @@ class InteractiveGame:
     def cleanup(self):
         try:
             if self.bot_process.poll() is None:  # Process is still running
+                assert self.bot_process.stdin != None
                 self.bot_process.stdin.write("end\n")
                 self.bot_process.stdin.flush()
 

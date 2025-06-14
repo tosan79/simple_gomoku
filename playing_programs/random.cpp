@@ -2,7 +2,6 @@
 #include <sstream>
 #include <string>
 
-
 #define N 15
 
 class Board {
@@ -15,32 +14,21 @@ public:
         board[i][j] = '.';
   }
 
-  void print() {
-    for (int i = 0; i < N; i++) {
-      for (int j = 0; j < N; j++)
-        std::cout << board[i][j];
-      std::cout << std::endl;
-    }
-    std::cout << std::endl;
-  }
-
   void make_move(int x, int y, char player) {
     board[x][y] = player;
     std::cout << x << " " << y << std::endl;
-    std::cout.flush(); // Make sure to flush the output
+    std::cout.flush();
   }
 
   char switch_player(char player) { return player == 'O' ? 'X' : 'O'; }
 
   void random_move(char player) {
     std::srand(time(nullptr));
-
     int x, y;
     do {
       x = std::rand() % N;
       y = std::rand() % N;
     } while (board[x][y] != '.');
-
     make_move(x, y, player);
   }
 
@@ -57,10 +45,10 @@ int main() {
   char player;
   std::string line;
 
-  std::cout << "ready\n"; // Changed from "hello" to "ready"
-  std::cout.flush();      // Make sure to flush
+  std::cout << "ready\n";
+  std::cout.flush();
 
-  // first line (assign the pieces to players, 'O' goes first)
+  // assign the pieces to players, 'O' goes first
   std::getline(std::cin, line);
   if (line == "start") {
     player = 'O';
@@ -70,19 +58,14 @@ int main() {
     b.read_opponents_move(player, line);
     b.random_move(player);
   }
-  // b.print();
 
   while (true) {
     std::getline(std::cin, line);
-
     if (line == "end") return 0; // end the game
-    if (line.empty() && player == 'X') return 1; // something is wrong with turns
-
+    // something is wrong with turns
+    if (line.empty() && player == 'X') return 1;
     b.read_opponents_move(player, line);
     b.random_move(player);
-
-    // b.print();
   }
-
   return 0;
 }

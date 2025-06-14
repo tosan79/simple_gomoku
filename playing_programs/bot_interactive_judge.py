@@ -24,7 +24,7 @@ class Game:
         self.moves = []
         self.board = [[' ' for _ in range(N)] for _ in range(N)]
 
-        # Wait for ready messages
+        # wait for "ready" messages
         assert self.process1.stdout != None
         assert self.process2.stdout != None
         ready1 = self.process1.stdout.readline().strip()

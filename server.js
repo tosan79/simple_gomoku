@@ -909,7 +909,6 @@ app.post("/api/compile-code", authenticate, async (req, res) => {
     }
 });
 
-// Get list of available opponents (from database)
 app.get("/api/get-opponents", async (req, res) => {
     try {
         const { room } = req.query;

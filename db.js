@@ -160,18 +160,6 @@ const addForeignKeyConstraint = async () => {
     }
 };
 
-db.run(`
-    CREATE TABLE IF NOT EXISTS tournaments (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        room_id TEXT NOT NULL,
-        status TEXT NOT NULL,
-        total_matches INTEGER NOT NULL,
-        completed_matches INTEGER DEFAULT 0,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        completed_at TIMESTAMP,
-        FOREIGN KEY (room_id) REFERENCES rooms (room_id)
-    )
-`);
 
 db.run(`
     CREATE TABLE IF NOT EXISTS tournaments (

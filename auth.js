@@ -9,15 +9,11 @@ const SALT_ROUNDS = 10;
 // User operations
 const createUser = async (username, password, role = 'student', classroom = null) => {
     try {
-        // Hash the password
         const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
-
-        // Insert the user
         const result = await dbRun(
             'INSERT INTO users (username, password, role, classroom) VALUES (?, ?, ?, ?)',
             [username, hashedPassword, role, classroom]
         );
-
         return { id: result.id, username, role };
     } catch (error) {
         console.error('Error creating user:', error);

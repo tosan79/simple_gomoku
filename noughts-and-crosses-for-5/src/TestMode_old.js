@@ -320,11 +320,11 @@ function TestMode() {
                     >
                         <div style={{ fontFamily: "monospace" }}>
                             {piecesAssigned
-                                ? `mysz (${selectedPiece})`
-                                : "mysz"}
+                                ? `mysz 🖱️ (${selectedPiece})`
+                                : "mysz 🖱️"}
                         </div>
                         <div style={{ fontFamily: "monospace" }}>
-                            {piecesAssigned ? `kod (${otherPiece})` : "kod"}
+                            {piecesAssigned ? `kod 🐈 (${otherPiece})` : "kod 🐈"}
                         </div>
                     </div>
                     <Board

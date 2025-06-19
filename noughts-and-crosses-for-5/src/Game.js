@@ -67,24 +67,28 @@ function Game() {
                 // wstęp do CodinGames
             </h3>
 
-            <div style={{
+            <div
+              style={{
                 display: "flex",
-                justifyContent: "space-between",
-                padding: "0 20px",
-                marginTop: "20px"
-            }}>
-                {/* Help text on the left */}
-                <div style={{
-                    width: "30%",
-                    padding: "20px",
-                    fontFamily: "sans-serif",
-                    fontSize: "16px",
-                    lineHeight: "1.6",
-                    color: "#333",
-                    // backgroundColor: "#f9f9f9",
-                    borderRadius: "8px",
-                    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-                }}>
+                justifyContent: "center",
+                alignItems: "start",
+                gap: "60px", // spacing between text and board
+                marginTop: "60px",
+              }}
+            >
+              <div
+                style={{
+                  maxWidth: "400px", // constrain the text width
+                  textAlign: "left",
+                  padding: "20px",
+                  fontFamily: "sans-serif",
+                  fontSize: "16px",
+                  lineHeight: "1.6",
+                  color: "#333",
+                  borderRadius: "8px",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                }}
+              >
                     <p> witaj!
                     </p>
                     <p>
@@ -105,7 +109,7 @@ function Game() {
                 </div>
 
                 {/* Board component moved to the right */}
-                <div style={{ width: "65%" }}>
+                <div style={{ width: "fit-content" }}>
                     <Board moves={moves} onGameOver={handleGameOver} />
                     {gameOver && (
                         <p

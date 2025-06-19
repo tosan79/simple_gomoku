@@ -49,6 +49,13 @@ function AdminPanel() {
         }
     }, [selectedRoomForTournament]);
 
+    useEffect(() => {
+        // Refresh program counts whenever users data changes
+        if (users.length > 0) {
+            fetchProgramCounts();
+        }
+    }, [users]);
+
     const fetchData = async () => {
         setIsLoading(true);
         setError(null);

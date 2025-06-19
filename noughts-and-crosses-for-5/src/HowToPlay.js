@@ -38,10 +38,11 @@ function HowToPlay() {
                     </p>
                 </div>
 
-                {/* <h3 style={{marginTop: "60px", marginBottom: "40px"}}>wskazówki do pisania botów</h3>
+                <h3 style={{marginTop: "60px", marginBottom: "40px"}}>wskazówki do pisania botów</h3>
                 <div>
-                    <p> </p>
-                </div> */}
+                    <p> Twoim zadaniem jest zastąpić funkcję random_move() czymś mądrzejszym </p>
+                    <p> żeby zrobić konkretny ruch (x, y) możesz użyć make_move(x, y, player) </p>
+                </div>
             </div>
         </div>
     );

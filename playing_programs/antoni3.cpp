@@ -37,6 +37,15 @@ class Board {
       make_move(x, y, player);
     }
 
+    bool fst = true;
+
+    void first_move(char player) {
+        if (fst && board[N/2][N/2] == '.')
+            make_move(N/2, N/2, player);
+        fst = false;
+    }
+
+
     void my_move(char player) {
       for (int i = N / 2; i != N / 2 - 1; i = (i + 1) % N)
         for (int j = N / 2; j != N / 2 - 1; j = (j + 1) % N)
@@ -49,6 +58,8 @@ class Board {
                       make_move(i + dx, j + dy, player);
                       return;
                     }
+      if (fst)
+        first_move(player);
       random_move(player);
     }
 

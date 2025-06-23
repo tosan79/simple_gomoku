@@ -1,22 +1,20 @@
-# history of writing this program:
+Aby zainstalować aplikację należy sklonować repozytorium oraz pobrać Node.js a potem wykonać następujące polecenia:
 
-1. ran `npx create-react-app noughts-and-crosses-for-5`
-2. described board interface
-3. configured infrastructure (vm, domain, nginx, systemctl, dmon service)
-4. designed logic of agents
-5. considerations about server, compilation of programs and the dueler / judge program
+- Aby zainstalować biblioteki i paczki używane przez serwer, w głównym katalogu repozytorium:
 
-------------------
+`npm install express multer cors bcrypt jsonwebtoken sqlite3`
 
-update WTOREK 14.01.2025
+a następnie uruchomić serwer:
 
-dodałem interaktywny 'TEST MODE'
-(gra toczy się użytkownik przeglądarki vs 'selected opponent' wybrany na pierwszym ekranie)
+`node server`
 
-* nowy 'ekran' TestMode.js obsługujący klikanie
-* program interactive_judge.py który komunikuje klikanie gracza z zaprogramowanymi ruchami admina/randoma
-* dostosowanie do tego trybu plików: server.js, WelcomeScreen.js oraz Board.js
+> w systemie Windows może się okazać zakomentowanie jednej z ostatnich linii w pliku server.js o treści:
+> app.get("*", (req, res) => {res.sendFile(path.join(__dirname, "noughts-and-crosses-for-5", "build", "index.html"));});
 
+- Aby wyświetlić frontend, w podkatalogu *noughts-and-crosses-for-5* wydać polecenie:
 
+`npm install`
 
-update PIĄTEK 24.01.2025
+by zainstalować wszystkie zależności z pliku package.json (w tym react-scripts), a następnie zbudować aplikację w środowisku development:
+
+`npm start`

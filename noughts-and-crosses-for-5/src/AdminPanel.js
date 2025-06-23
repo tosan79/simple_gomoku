@@ -106,14 +106,11 @@ function AdminPanel() {
     };
 
     const fetchPrograms = async () => {
-        const response = await fetch(
-            `${API_URL}/api/get-opponents`,
-            {
-                headers: {
-                    Authorization: localStorage.getItem("token"),
-                },
+        const response = await fetch(`${API_URL}/api/get-opponents`, {
+            headers: {
+                Authorization: localStorage.getItem("token"),
             },
-        );
+        });
 
         if (!response.ok) {
             throw new Error("failed to fetch programs");
@@ -180,20 +177,17 @@ function AdminPanel() {
         if (!newRoom.roomId.trim()) return;
 
         try {
-            const response = await fetch(
-                `${API_URL}/api/admin/rooms`,
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: localStorage.getItem("token"),
-                    },
-                    body: JSON.stringify({
-                        roomId: newRoom.roomId,
-                        description: newRoom.description,
-                    }),
+            const response = await fetch(`${API_URL}/api/admin/rooms`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: localStorage.getItem("token"),
                 },
-            );
+                body: JSON.stringify({
+                    roomId: newRoom.roomId,
+                    description: newRoom.description,
+                }),
+            });
 
             if (!response.ok) {
                 const data = await response.json();
@@ -395,7 +389,7 @@ function AdminPanel() {
                 message:
                     data.status === "completed"
                         ? "zawody zakończone!"
-                        : "w trakcie... " // ${data.progress}% ukończone`,
+                        : "w trakcie... ", // ${data.progress}% ukończone`,
             }));
 
             // If tournament is still in progress, poll again after 5 seconds
@@ -532,6 +526,79 @@ function AdminPanel() {
         }
     };
 
+    const handleUpdateUserRole = async (userId, newRole) => {
+        if (
+            !window.confirm(
+                `czy na pewno chcesz zmienić rolę tego użytkownika na "${newRole}"?`,
+            )
+        ) {
+            return;
+        }
+
+        try {
+            const response = await fetch(
+                `${API_URL}/api/admin/users/${userId}/role`,
+                {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: localStorage.getItem("token"),
+                    },
+                    body: JSON.stringify({ role: newRole }),
+                },
+            );
+
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.error || "failed to update user role");
+            }
+
+            await fetchUsers();
+            setSelectedUser(null);
+            setError(null);
+        } catch (error) {
+            setError(error.message);
+        }
+    };
+
+    const handleDeleteUser = async (userId, username) => {
+        if (
+            !window.confirm(
+                `czy na pewno chcesz usunąć użytkownika "${username}"? Ta akcja jest nieodwracalna.`,
+            )
+        ) {
+            return;
+        }
+
+        try {
+            const response = await fetch(
+                `${API_URL}/api/admin/users/${userId}`,
+                {
+                    method: "DELETE",
+                    headers: {
+                        Authorization: localStorage.getItem("token"),
+                    },
+                },
+            );
+
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.error || "failed to delete user");
+            }
+
+            await fetchUsers();
+            await fetchStudentCounts();
+            await fetchProgramCounts();
+            setSelectedUser(null);
+            setError(null);
+        } catch (error) {
+            setError(error.message);
+        }
+    };
+
+    const currentUser = JSON.parse(localStorage.getItem("user"));
+    const isProfessor = currentUser && currentUser.username === "profesor";
+
     return (
         <>
             <AdminNavBar />
@@ -643,9 +710,10 @@ function AdminPanel() {
                                                     key={user.id}
                                                     value={user.id}
                                                 >
-                                                    {user.username}{" "}
+                                                    {user.username} ({user.role}
+                                                    )
                                                     {user.classroom &&
-                                                        `(${user.classroom})`}
+                                                        ` - ${user.classroom}`}
                                                 </option>
                                             ))}
                                         </select>
@@ -686,6 +754,97 @@ function AdminPanel() {
                                                     ? `przypisz do ${selectedRoomForUser}`
                                                     : "usuń przypisanie"}
                                             </button>
+
+                                            {/* Opcje tylko dla profesora */}
+                                            {isProfessor && (
+                                                <div className="professor-options">
+                                                    <hr
+                                                        style={{
+                                                            margin: "20px 0",
+                                                        }}
+                                                    />
+                                                    {/* <h4>opcje profesora</h4> */}
+
+                                                    <div className="admin-form-row">
+                                                        <label>
+                                                            zmień rolę na:
+                                                        </label>
+                                                        <div
+                                                            style={{
+                                                                display: "flex",
+                                                                gap: "10px",
+                                                                marginTop:
+                                                                    "5px",
+                                                            }}
+                                                        >
+                                                            <button
+                                                                onClick={() =>
+                                                                    handleUpdateUserRole(
+                                                                        selectedUser.id,
+                                                                        "student",
+                                                                    )
+                                                                }
+                                                                disabled={
+                                                                    selectedUser.role ===
+                                                                    "student"
+                                                                }
+                                                                className={
+                                                                    selectedUser.role ===
+                                                                    "student"
+                                                                        ? "disabled-button"
+                                                                        : "role-button"
+                                                                }
+                                                            >
+                                                                student
+                                                            </button>
+                                                            <button
+                                                                onClick={() =>
+                                                                    handleUpdateUserRole(
+                                                                        selectedUser.id,
+                                                                        "admin",
+                                                                    )
+                                                                }
+                                                                disabled={
+                                                                    selectedUser.role ===
+                                                                    "admin"
+                                                                }
+                                                                className={
+                                                                    selectedUser.role ===
+                                                                    "admin"
+                                                                        ? "disabled-button"
+                                                                        : "role-button"
+                                                                }
+                                                            >
+                                                                admin
+                                                            </button>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* <div
+                                                        className="admin-form-row"
+                                                        style={{
+                                                            marginTop: "20px",
+                                                        }}
+                                                    >
+                                                        <button
+                                                            onClick={() =>
+                                                                handleDeleteUser(
+                                                                    selectedUser.id,
+                                                                    selectedUser.username,
+                                                                )
+                                                            }
+                                                            className="admin-delete-button"
+                                                            style={{
+                                                                backgroundColor:
+                                                                    "#dc3545",
+                                                                color: "white",
+                                                            }}
+                                                        >
+                                                            usuń użytkownika
+                                                        </button>
+                                                    </div> */}
+                                                </div>
+                                            )}
                                         </>
                                     )}
                                 </div>
@@ -709,7 +868,13 @@ function AdminPanel() {
                                             <tr key={user.id}>
                                                 <td>{user.id}</td>
                                                 <td>{user.username}</td>
-                                                <td>{user.role}</td>
+                                                <td>
+                                                    <span
+                                                        className={`role-badge role-${user.role}`}
+                                                    >
+                                                        {user.role}
+                                                    </span>
+                                                </td>
                                                 <td>{user.classroom || "-"}</td>
                                                 <td>
                                                     {new Date(
@@ -730,6 +895,23 @@ function AdminPanel() {
                                                     >
                                                         edytuj
                                                     </button>
+                                                    {isProfessor && (
+                                                        <button
+                                                            onClick={() =>
+                                                                handleDeleteUser(
+                                                                    user.id,
+                                                                    user.username,
+                                                                )
+                                                            }
+                                                            className="admin-delete-button"
+                                                            style={{
+                                                                marginLeft:
+                                                                    "5px",
+                                                            }}
+                                                        >
+                                                            usuń
+                                                        </button>
+                                                    )}
                                                 </td>
                                             </tr>
                                         ))}

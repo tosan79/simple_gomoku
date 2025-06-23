@@ -1858,6 +1858,79 @@ app.get("/api/classroom/tournaments", authenticate, async (req, res) => {
     }
 });
 
+// Update user role (only for professor)
+app.put("/api/admin/users/:userId/role", authenticateAdmin, async (req, res) => {
+    try {
+        // Check if current user is professor
+        const currentUser = await dbGet("SELECT username FROM users WHERE id = ?", [req.user.id]);
+
+        if (currentUser.username !== "profesor") {
+            return res.status(403).json({ error: "Only professor can change user roles" });
+        }
+
+        const { userId } = req.params;
+        const { role } = req.body;
+
+        if (!["admin", "student"].includes(role)) {
+            return res.status(400).json({ error: "Invalid role" });
+        }
+
+        // Prevent changing professor's own role
+        const targetUser = await dbGet("SELECT username FROM users WHERE id = ?", [userId]);
+        if (targetUser.username === "profesor") {
+            return res.status(400).json({ error: "Cannot change professor's role" });
+        }
+
+        await dbRun("UPDATE users SET role = ? WHERE id = ?", [role, userId]);
+        res.json({ success: true });
+    } catch (error) {
+        console.error("Error updating user role:", error);
+        res.status(500).json({ error: "Failed to update user role" });
+    }
+});
+
+// Delete user (only for professor)
+app.delete("/api/admin/users/:userId", authenticateAdmin, async (req, res) => {
+    try {
+        // Check if current user is professor
+        const currentUser = await dbGet("SELECT username FROM users WHERE id = ?", [req.user.id]);
+
+        if (currentUser.username !== "profesor") {
+            return res.status(403).json({ error: "Only professor can delete users" });
+        }
+
+        const { userId } = req.params;
+
+        // Prevent deleting professor account
+        const targetUser = await dbGet("SELECT username FROM users WHERE id = ?", [userId]);
+        if (targetUser.username === "profesor") {
+            return res.status(400).json({ error: "Cannot delete professor account" });
+        }
+
+        // Begin transaction
+        await dbRun("BEGIN TRANSACTION");
+
+        // Delete user's programs first
+        await dbRun("DELETE FROM programs WHERE owner_id = ?", [userId]);
+
+        // Delete user's game history
+        await dbRun("DELETE FROM game_history WHERE player1 = ? OR player2 = ?", [targetUser.username, targetUser.username]);
+
+        // Delete the user
+        await dbRun("DELETE FROM users WHERE id = ?", [userId]);
+
+        // Commit transaction
+        await dbRun("COMMIT");
+
+        res.json({ success: true });
+    } catch (error) {
+        // Rollback on error
+        await dbRun("ROLLBACK");
+        console.error("Error deleting user:", error);
+        res.status(500).json({ error: "Failed to delete user" });
+    }
+});
+
 // const PORT = process.env.PORT || 4000;
 
 // app.listen(PORT, () => {

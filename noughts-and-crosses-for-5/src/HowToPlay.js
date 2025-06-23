@@ -38,10 +38,10 @@ function HowToPlay() {
                     </p>
                 </div>
 
-                <h3 style={{marginTop: "60px", marginBottom: "40px"}}>wskazówki do pisania botów</h3>
+                <h2 style={{marginTop: "100px", marginBottom: "40px", color: "#FF69B4"}}>wskazówki do pisania botów</h2>
                 <div>
-                    <p> Twoim zadaniem jest zastąpić funkcję random_move() czymś mądrzejszym </p>
-                    <p> żeby zrobić konkretny ruch (x, y) możesz użyć make_move(x, y, player) </p>
+                    <p> • Twoim głównym zadaniem jest zastąpić funkcję random_move() czymś <it>mądrzejszym</it> </p>
+                    <p> • żeby zrobić ruch na pole na planszy o współrzędnych (x, y), używaj wywołania make_move(x, y, player) </p>
                 </div>
             </div>
         </div>

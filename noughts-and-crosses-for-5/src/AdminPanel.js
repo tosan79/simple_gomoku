@@ -588,6 +588,7 @@ function AdminPanel() {
             }
 
             await fetchUsers();
+            await fetchPrograms();
             await fetchStudentCounts();
             await fetchProgramCounts();
             setSelectedUser(null);

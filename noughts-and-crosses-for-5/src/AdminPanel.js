@@ -484,48 +484,48 @@ function AdminPanel() {
     };
 
     // Add this function to kill a tournament
-    const killTournament = async (tournamentId) => {
-        if (
-            !window.confirm(
-                "Czy na pewno chcesz usunąć te zawody? Ta akcja jest nieodwracalna.",
-            )
-        ) {
-            return;
-        }
+    // const killTournament = async (tournamentId) => {
+    //     if (
+    //         !window.confirm(
+    //             "Czy na pewno chcesz usunąć te zawody? Ta akcja jest nieodwracalna.",
+    //         )
+    //     ) {
+    //         return;
+    //     }
 
-        try {
-            const response = await fetch(
-                `${API_URL}/api/admin/tournaments/${tournamentId}`,
-                {
-                    method: "DELETE",
-                    headers: {
-                        Authorization: localStorage.getItem("token"),
-                    },
-                },
-            );
+    //     try {
+    //         const response = await fetch(
+    //             `${API_URL}/api/admin/tournaments/${tournamentId}`,
+    //             {
+    //                 method: "DELETE",
+    //                 headers: {
+    //                     Authorization: localStorage.getItem("token"),
+    //                 },
+    //             },
+    //         );
 
-            if (!response.ok) {
-                throw new Error("Failed to delete tournament");
-            }
+    //         if (!response.ok) {
+    //             throw new Error("Failed to delete tournament");
+    //         }
 
-            // Refresh tournaments list
-            fetchRoomTournaments(selectedRoomForTournament);
+    //         // Refresh tournaments list
+    //         fetchRoomTournaments(selectedRoomForTournament);
 
-            // Reset tournament status if we were viewing this tournament
-            if (tournamentStatus.id === tournamentId) {
-                setTournamentStatus({
-                    inProgress: false,
-                    id: null,
-                    progress: 0,
-                    message: "Zawody zostały anulowane",
-                });
-                setLeaderboard([]);
-            }
-        } catch (error) {
-            console.error("Error killing tournament:", error);
-            setError("Failed to delete tournament");
-        }
-    };
+    //         // Reset tournament status if we were viewing this tournament
+    //         if (tournamentStatus.id === tournamentId) {
+    //             setTournamentStatus({
+    //                 inProgress: false,
+    //                 id: null,
+    //                 progress: 0,
+    //                 message: "Zawody zostały anulowane",
+    //             });
+    //             setLeaderboard([]);
+    //         }
+    //     } catch (error) {
+    //         console.error("Error killing tournament:", error);
+    //         setError("Failed to delete tournament");
+    //     }
+    // };
 
     const handleUpdateUserRole = async (userId, newRole) => {
         if (

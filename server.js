@@ -1392,6 +1392,9 @@ async function startTournamentGames(tournamentId) {
                 } else if (gameResult.winner === "X") {
                     winner = match.player2; // Second player was X
                     console.log(`Winner determined: ${winner} (X)`);
+                } else if (gameResult.winner === "_") {
+                    winner = "both";
+                    console.log("draw");
                 } else {
                     console.log(
                         `No winner - draw or error. gameResult.winner = ${gameResult.winner}`,
@@ -1413,7 +1416,16 @@ async function startTournamentGames(tournamentId) {
 
                 // Rest of the function stays the same...
                 // Update tournament results with scoring
-                if (['O', 'X'].includes(winner)) {
+                if (winner === "both") { // winner === '_' i.e. draw
+                    await dbRun(
+                        "UPDATE tournament_results SET draws = draws + 1, points = points + 1 WHERE tournament_id = ? AND player = ?",
+                        [tournamentId, match.player1],
+                    );
+                    await dbRun(
+                        "UPDATE tournament_results SET draws = draws + 1, points = points + 1 WHERE tournament_id = ? AND player = ?",
+                        [tournamentId, match.player2],
+                    );
+                } else if (winner) {
                     await dbRun(
                         "UPDATE tournament_results SET wins = wins + 1, points = points + 3 WHERE tournament_id = ? AND player = ?",
                         [tournamentId, winner],
@@ -1426,15 +1438,6 @@ async function startTournamentGames(tournamentId) {
                     await dbRun(
                         "UPDATE tournament_results SET losses = losses + 1 WHERE tournament_id = ? AND player = ?",
                         [tournamentId, loser],
-                    );
-                } else if (winner) { // winner === '_' i.e. draw
-                    await dbRun(
-                        "UPDATE tournament_results SET draws = draws + 1, points = points + 1 WHERE tournament_id = ? AND player = ?",
-                        [tournamentId, match.player1],
-                    );
-                    await dbRun(
-                        "UPDATE tournament_results SET draws = draws + 1, points = points + 1 WHERE tournament_id = ? AND player = ?",
-                        [tournamentId, match.player2],
                     );
                 }
 

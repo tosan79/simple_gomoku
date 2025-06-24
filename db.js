@@ -35,8 +35,7 @@ const initDb = () => {
                 compiled_path TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (owner_id) REFERENCES users (id),
-                FOREIGN KEY (room_id) REFERENCES rooms (room_id)
+                FOREIGN KEY (owner_id) REFERENCES users (id)
             )
         `);
 

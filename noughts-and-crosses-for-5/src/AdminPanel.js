@@ -651,7 +651,7 @@ function AdminPanel() {
 
                     {activeTab === "dashboard" && (
                         <div className="admin-dashboard">
-                            <h2>dashboard</h2>
+                            <h2>user.username</h2>
                             <div className="admin-stats">
                                 <div className="admin-stat-card">
                                     <h3>użytkownicy</h3>

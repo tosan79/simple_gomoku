@@ -1,2 +1,10 @@
 noughts-and-crosses-for-5/node_modules/
 data/codingomoku.db
+uploads/
+playing_programs/
+
+!playing_programs/admin.cpp
+!playing_programs/random.cpp
+!playing_programs/judge.py
+!playing_programs/interactive_judge.py
+!playing_programs/bot_interactive_judge.py

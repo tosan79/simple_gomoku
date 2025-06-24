@@ -438,42 +438,42 @@ app.get("/api/check-nickname/:nickname", (req, res) => {
 });
 
 // GAME MANAGEMENT
-app.post("/api/start-game", async (req, res) => {
-    try {
-        console.log("Received start-game request with body:", req.body);
+// app.post("/api/start-game", async (req, res) => {
+//     try {
+//         console.log("Received start-game request with body:", req.body);
 
-        const opponent = req.body.opponent;
-        const nickname = req.body.nickname;
+//         const opponent = req.body.opponent;
+//         const nickname = req.body.nickname;
 
-        if (!opponent || !nickname) {
-            return res.status(400).json({
-                error: "Missing required fields",
-                received: req.body,
-            });
-        }
+//         if (!opponent || !nickname) {
+//             return res.status(400).json({
+//                 error: "Missing required fields",
+//                 received: req.body,
+//             });
+//         }
 
-        // Compile opponent's program
-        const opponentPath = path.join(playingDir, `${opponent}.cpp`);
-        const opponentCompiledPath = path.join(playingDir, "agent2");
+//         // Compile opponent's program
+//         const opponentPath = path.join(playingDir, `${opponent}.cpp`);
+//         const opponentCompiledPath = path.join(playingDir, "agent2");
 
-        await compileCode(opponentPath, opponentCompiledPath);
+//         await compileCode(opponentPath, opponentCompiledPath);
 
-        // Run the game
-        const gameResults = await runGame();
+//         // Run the game
+//         const gameResults = await runGame();
 
-        res.json({
-            message: "Game completed",
-            results: gameResults,
-            movesFileReady: true,
-        });
-    } catch (error) {
-        console.error("Error in start-game:", error);
-        res.status(500).json({
-            error: "Server error during game initialization",
-            details: error.message,
-        });
-    }
-});
+//         res.json({
+//             message: "Game completed",
+//             results: gameResults,
+//             movesFileReady: true,
+//         });
+//     } catch (error) {
+//         console.error("Error in start-game:", error);
+//         res.status(500).json({
+//             error: "Server error during game initialization",
+//             details: error.message,
+//         });
+//     }
+// });
 
 // Add game history table
 app.post("/api/games/history", authenticate, async (req, res) => {
@@ -649,7 +649,7 @@ app.post("/api/make-move", (req, res) => {
                     gameProcess.kill();
                     activeGames.delete(gameId);
                 }
-            }, 15000); // Increased timeout
+            }, 5000); // Increased timeout
 
             // Listen for any existing data first
             const onData = (data) => {
@@ -904,6 +904,48 @@ app.post("/api/compile-code", authenticate, async (req, res) => {
         console.error("Error saving/compiling code:", error);
         res.status(500).json({
             error: "Server error during compilation: " + error.message,
+        });
+    }
+});
+
+app.post("/api/save-code", authenticate, async (req, res) => {
+    try {
+        const { nickname, code } = req.body;
+
+        if (!nickname || !code) {
+            return res.status(400).json({ error: "Nickname and code are required" });
+        }
+
+        console.log("Saving code for:", nickname);
+
+        // Save code to file
+        const filePath = path.join(playingDir, `${nickname}.cpp`);
+        await fs.promises.writeFile(filePath, code);
+
+        // Update database
+        const existingProgram = await dbGet(
+            "SELECT * FROM programs WHERE name = ?",
+            [nickname],
+        );
+
+        if (existingProgram) {
+            await dbRun(
+                "UPDATE programs SET code = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                [code, existingProgram.id],
+            );
+        } else {
+            await dbRun(
+                "INSERT INTO programs (name, code, owner_id) VALUES (?, ?, ?)",
+                [nickname, code, req.user.id],
+            );
+        }
+
+        console.log("Code saved successfully");
+        res.json({ success: true, message: "Code saved successfully" });
+    } catch (error) {
+        console.error("Error saving code:", error);
+        res.status(500).json({
+            error: "Server error during save: " + error.message,
         });
     }
 });
@@ -1371,7 +1413,7 @@ async function startTournamentGames(tournamentId) {
 
                 // Rest of the function stays the same...
                 // Update tournament results with scoring
-                if (winner) {
+                if (['O', 'X'].includes(winner)) {
                     await dbRun(
                         "UPDATE tournament_results SET wins = wins + 1, points = points + 3 WHERE tournament_id = ? AND player = ?",
                         [tournamentId, winner],
@@ -1385,7 +1427,7 @@ async function startTournamentGames(tournamentId) {
                         "UPDATE tournament_results SET losses = losses + 1 WHERE tournament_id = ? AND player = ?",
                         [tournamentId, loser],
                     );
-                } else {
+                } else if (winner) { // winner === '_' i.e. draw
                     await dbRun(
                         "UPDATE tournament_results SET draws = draws + 1, points = points + 1 WHERE tournament_id = ? AND player = ?",
                         [tournamentId, match.player1],
@@ -1440,50 +1482,6 @@ async function startTournamentGames(tournamentId) {
     }
 }
 
-// function runBotGame(player1, player2) {
-//     return new Promise((resolve, reject) => {
-//         try {
-//             const gameProcess = spawn(
-//                 "python3",
-//                 [
-//                     path.join(playingDir, "bot_interactive_judge.py"),
-//                     player1,
-//                     player2,
-//                     "O" // First player is always O
-//                 ],
-//                 {
-//                     cwd: playingDir,
-//                 }
-//             );
-
-//             let outputData = "";
-
-//             gameProcess.stdout.on("data", (data) => {
-//                 outputData += data.toString();
-//             });
-
-//             gameProcess.stderr.on("data", (data) => {
-//                 console.log(`Bot game debug: ${data.toString()}`);
-//             });
-
-//             gameProcess.on("close", (code) => {
-//                 if (code !== 0) {
-//                     reject(new Error(`Game process exited with code ${code}`));
-//                     return;
-//                 }
-
-//                 try {
-//                     const gameData = JSON.parse(outputData);
-//                     resolve(gameData);
-//                 } catch (error) {
-//                     reject(new Error(`Failed to parse game data: ${error.message}`));
-//                 }
-//             });
-//         } catch (error) {
-//             reject(error);
-//         }
-//     });
-// }
 function runBotGame(player_O, player_X) {
     return new Promise((resolve, reject) => {
         try {
@@ -1527,7 +1525,7 @@ function runBotGame(player_O, player_X) {
             setTimeout(() => {
                 gameProcess.kill();
                 reject(new Error("Game timeout"));
-            }, 30000); // 30 second timeout
+            }, 20000); // 30 second timeout
         } catch (error) {
             reject(error);
         }
@@ -1674,58 +1672,6 @@ app.get(
         }
     },
 );
-
-(async function initTournamentTables() {
-    try {
-        // Create tournaments table
-        await dbRun(`
-            CREATE TABLE IF NOT EXISTS tournaments (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                room_id TEXT NOT NULL,
-                status TEXT DEFAULT 'pending',
-                total_matches INTEGER DEFAULT 0,
-                completed_matches INTEGER DEFAULT 0,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                completed_at TIMESTAMP NULL
-            )
-        `);
-
-        // Create tournament_matches table
-        await dbRun(`
-            CREATE TABLE IF NOT EXISTS tournament_matches (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                tournament_id INTEGER NOT NULL,
-                player1 TEXT NOT NULL,
-                player2 TEXT NOT NULL,
-                player1_piece TEXT NOT NULL,
-                winner TEXT NULL,
-                moves TEXT NULL,
-                status TEXT DEFAULT 'pending',
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                completed_at TIMESTAMP NULL,
-                FOREIGN KEY (tournament_id) REFERENCES tournaments(id)
-            )
-        `);
-
-        // Create tournament_results table
-        await dbRun(`
-            CREATE TABLE IF NOT EXISTS tournament_results (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                tournament_id INTEGER NOT NULL,
-                player TEXT NOT NULL,
-                wins INTEGER DEFAULT 0,
-                losses INTEGER DEFAULT 0,
-                draws INTEGER DEFAULT 0,
-                points INTEGER DEFAULT 0,
-                FOREIGN KEY (tournament_id) REFERENCES tournaments(id)
-            )
-        `);
-
-        console.log("Tournament tables initialized");
-    } catch (error) {
-        console.error("Error initializing tournament tables:", error);
-    }
-})();
 
 app.get("/api/classroom/leaderboard", authenticate, async (req, res) => {
     try {

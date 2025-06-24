@@ -73,78 +73,78 @@ class Game:
         self.current_symbol = 'X'
 
     def play_game(self):
-        try:
-            while True:
-                # Get move from current process
-                assert self.current_process.stdout != None
-                move = self.current_process.stdout.readline().strip()
-                print(f"Received move: {move}", file=sys.stderr)
+        while True:
+            # Get move from current process
+            assert self.current_process.stdout != None
+            move = self.current_process.stdout.readline().strip()
+            print(f"Received move: {move}", file=sys.stderr)
 
-                try:
-                    x, y = map(int, move.split())
-                    if 0 <= x < N and 0 <= y < N and self.board[x][y] == ' ':
-                        # Valid move
-                        self.board[x][y] = self.current_symbol
-                        move_data = {
-                            "x": x,
-                            "y": y,
-                            "symbol": self.current_symbol
-                        }
-                        self.moves.append(move_data)
+            try:
+                x, y = map(int, move.split())
+                if 0 <= x < N and 0 <= y < N and self.board[x][y] == ' ':
+                    # Valid move
+                    self.board[x][y] = self.current_symbol
+                    move_data = {
+                        "x": x,
+                        "y": y,
+                        "symbol": self.current_symbol
+                    }
+                    self.moves.append(move_data)
 
-                        # Check for win
-                        if self.check_win(x, y, self.current_symbol):
-                            self.moves[-1]["winner"] = self.current_symbol
-                            break
-
-                        # Send move to other process
-                        assert self.other_process.stdin != None
-                        self.other_process.stdin.write(f"{x} {y}\n")
-                        self.other_process.stdin.flush()
-
-                        # Switch players
-                        self.current_process, self.other_process = self.other_process, self.current_process
-                        self.current_symbol = 'O' if self.current_symbol == 'X' else 'X'
-
-                    else:
-                        print(f"Invalid move: {x},{y}", file=sys.stderr)
+                    # Check for win
+                    if self.check_win(x, y, self.current_symbol):
+                        self.moves[-1]["winner"] = self.current_symbol
                         break
-                except ValueError:
-                    print(f"Invalid move format: {move}", file=sys.stderr)
+
+                    # Send move to other process
+                    assert self.other_process.stdin != None
+                    self.other_process.stdin.write(f"{x} {y}\n")
+                    self.other_process.stdin.flush()
+
+                    # Switch players
+                    self.current_process, self.other_process = self.other_process, self.current_process
+                    self.current_symbol = 'O' if self.current_symbol == 'X' else 'X'
+
+                else:
+                    print(f"Invalid move: {x},{y}", file=sys.stderr)
                     break
+            except ValueError:
+                print(f"Invalid move format: {move}", file=sys.stderr)
+                break
 
 
-            result = {
-                "success": True,
-                "moves": self.moves,
-                "winner": None  # This will be set if there was a winner
-            }
+        result = {
+            "success": True,
+            "moves": self.moves,
+            "winner": None  # This will be set if there was a winner
+        }
 
-            # Check if the last move was a winning move
-            if self.moves:
-                last_move = self.moves[-1]
-                if "winner" in last_move:
-                    result["winner"] = last_move["winner"]
-                    if "winning_cells" in last_move:
-                        result["winning_cells"] = last_move["winning_cells"]
-            # Send complete game data
-            print(json.dumps(result))
-            # print(json.dumps({
-            #     "success": True,
-            #     "moves": self.moves
-            # }))
+        # Check if the last move was a winning move
+        if self.moves:
+            last_move = self.moves[-1]
+            if "winner" in last_move:
+                result["winner"] = last_move["winner"]
+                if "winning_cells" in last_move:
+                    result["winning_cells"] = last_move["winning_cells"]
+            elif len(self.moves) == N * N:
+                result["winner"] = '_'
+        # Send complete game data
+        print(json.dumps(result))
+        # print(json.dumps({
+        #     "success": True,
+        #     "moves": self.moves
+        # }))
 
-        finally:
-            # Cleanup
-            for process in [self.process1, self.process2]:
-                try:
-                    assert process.stdin != None
-                    process.stdin.write("end\n")
-                    process.stdin.flush()
-                    process.terminate()
-                    process.wait(timeout=1)
-                except:
-                    pass
+        # Cleanup
+        for process in [self.process1, self.process2]:
+            try:
+                assert process.stdin != None
+                process.stdin.write("end\n")
+                process.stdin.flush()
+                process.terminate()
+                process.wait(timeout=1)
+            except:
+                pass
 
     def check_win(self, x, y, symbol):
         directions = [[(0, 1)], [(1, 0)], [(1, 1)], [(1, -1)]]

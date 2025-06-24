@@ -4,6 +4,11 @@
 
 #define N 15
 
+enum Coordinates {
+  X,
+  Y
+};
+
 class Board {
   public:
     char board[N][N];
@@ -34,6 +39,25 @@ class Board {
       } while (board[x][y] != '.');
 
       make_move(x, y, player);
+    }
+
+    int x_prev = -1;
+    int y_prev = -1;
+
+    void asdad() {
+      std::cout << "dasdsad";
+    }
+
+    void smart_move(char player) {
+      if (board[N/2][N/2] == '.') {
+        make_move(N/2, N/2, player);
+        x_prev = N/2;
+        y_prev = N/2;
+      }
+      else {
+        random_move(player);
+      }
+
     }
 
     void read_opponents_move(char player, const std::string &str) {

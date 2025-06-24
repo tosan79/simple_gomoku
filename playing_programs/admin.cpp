@@ -97,7 +97,7 @@ public:
 
           // Prioritize blocking opponent's winning move
           if (opponent_score >= 3) {
-            score = opponent_score + 5;
+            score = opponent_score + 1;
           }
 
           if (score > best_score) {

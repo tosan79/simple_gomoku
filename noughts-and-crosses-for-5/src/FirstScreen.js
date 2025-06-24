@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import Board from "./Board";
 import "./Screens.css";
-import "./BackButton.css";
+// import "./BackButton.css";
 import { API_URL } from "./config";
 
 const N = 15;

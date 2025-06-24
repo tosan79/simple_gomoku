@@ -174,7 +174,7 @@ function TestMode() {
             }
         } catch (error) {
             console.error("Error starting game:", error);
-            alert(`Failed to start game: ${error.message}`);
+            alert(`nie można rozpocząć gry: ${error.message}`);
         }
     };
 
@@ -222,8 +222,7 @@ function TestMode() {
                 console.error("Move error:", botMove.error);
                 setIsPlayerTurn(true);
                 if (botMove.error === "Move timeout") {
-                    alert("Game timed out. Please start a new game.");
-                    navigate("/welcome");
+                    alert("zawiesiłeś grę. zacznij od nowa!");
                 }
                 return;
             }
@@ -263,7 +262,7 @@ function TestMode() {
     const handleSaveClick = async () => {
         setIsSaving(true);
         try {
-            const response = await fetch(`${API_URL}/api/compile-code`, {
+            const response = await fetch(`${API_URL}/api/save-code`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -271,8 +270,7 @@ function TestMode() {
                 },
                 body: JSON.stringify({
                     nickname,
-                    code,
-                    saveOnly: true,
+                    code
                 }),
             });
 

@@ -261,6 +261,7 @@ function AdminPanel() {
 
             await fetchUsers();
             await fetchStudentCounts();
+            await fetchPrograms();
             await fetchProgramCounts(); // Also refresh program counts
             setSelectedUser(null);
             setSelectedRoomForUser("");

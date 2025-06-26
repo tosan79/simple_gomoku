@@ -15,3 +15,10 @@ a następnie uruchomić serwer:
 by zainstalować wszystkie zależności z pliku package.json (w tym react-scripts), a następnie zbudować aplikację w środowisku development:
 
 `npm start`
+
+
+W pliku `data/codingomoku.db` znajduje się baza danych. Zawiera ona trzech domyślnych użytkowników:
+- login: 'profesor' (hasło: 'profesor') - do zarządzania innymi kontami
+- login: 'admin' (hasło: 'admin') - program-boss
+- login: 'random' (hasło: 'random') - losowy gracz
+Baza jest uruchamiana automatycznie przez serwer, a programy użytkowników 'admin' i 'random' kompilowane (do tego potrzebny jest zainstalowany lokalnie kopmilator g++).

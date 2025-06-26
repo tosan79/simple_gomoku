@@ -8,9 +8,6 @@ a następnie uruchomić serwer:
 
 `node server`
 
-> w systemie Windows może się okazać zakomentowanie jednej z ostatnich linii w pliku server.js o treści:
-> app.get("*", (req, res) => {res.sendFile(path.join(__dirname, "noughts-and-crosses-for-5", "build", "index.html"));});
-
 - Aby wyświetlić frontend, w podkatalogu *noughts-and-crosses-for-5* wydać polecenie:
 
 `npm install`

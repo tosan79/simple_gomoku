@@ -32,12 +32,11 @@ public:
 
   char switch_player(char player) { return player == 'O' ? 'X' : 'O'; }
 
-  // Helper function to check if coordinates are within board bounds
   bool is_valid_position(int x, int y) {
     return x >= 0 && x < N && y >= 0 && y < N;
   }
 
-  // Helper function to count consecutive pieces in a direction
+  // maximum number of pieces on each of 4 straights containing (i,j)
   int count_direction(int x, int y, int dx, int dy, char player) {
     int count = 0;
     int curr_x = x + dx;
@@ -52,7 +51,6 @@ public:
     return count;
   }
 
-  // Check if position is empty and has adjacent pieces
   bool has_adjacent_piece(int x, int y) {
     for (int dx = -1; dx <= 1; dx++) {
       for (int dy = -1; dy <= 1; dy++) {
@@ -74,28 +72,23 @@ public:
     int best_x = -1;
     int best_y = -1;
 
-    // Check all possible positions
-    for (int i = 0; i < N; i++) { // START FROM N/2 TO N, THEN FROM 0 TO N/2 - 1
-      for (int j = 0; j < N; j++) {
+    for (int i = N / 2; i != N / 2 - 1; i = (i + 1) % N) {
+      for (int j = N / 2; j != N / 2 - 1; j = (j + 1) % N) {
         if (board[i][j] != '.')
           continue;
         if (!has_adjacent_piece(i, j) && best_score > 0)
           continue;
 
-        // Check all 8 directions
         int directions[8][2] = {{-1, -1}, {-1, 0}, {-1, 1}, {0, -1},
                                 {0, 1},   {1, -1}, {1, 0},  {1, 1}};
 
         for (auto [dx, dy] : directions) {
-          // Count our pieces
           int score = count_direction(i, j, dx, dy, player) +
                       count_direction(i, j, -dx, -dy, player);
 
-          // Check if we can win or need to block
           int opponent_score = count_direction(i, j, dx, dy, opponent) +
                                count_direction(i, j, -dx, -dy, opponent);
 
-          // Prioritize blocking opponent's winning move
           if (opponent_score >= 3) {
             score = opponent_score + 1;
           }
@@ -109,15 +102,12 @@ public:
       }
     }
 
-    // If we found a move, make it
     if (best_x != -1 && best_y != -1) {
       make_move(best_x, best_y, player);
     } else {
-      // If no good move found, play in the center or near the last move
       if (board[N / 2][N / 2] == '.') {
         make_move(N / 2, N / 2, player);
       } else {
-        // Find the nearest empty spot to the center
         for (int d = 1; d < N; d++) {
           for (int i = -d; i <= d; i++) {
             for (int j = -d; j <= d; j++) {
@@ -147,8 +137,8 @@ int main() {
   char player;
   std::string line;
 
-  std::cout << "ready\n"; // Changed from "hello" to "ready"
-  std::cout.flush();      // Make sure to flush
+  std::cout << "ready\n";
+  std::cout.flush();
 
   // first line (assign the pieces to players, 'O' goes first)
   std::getline(std::cin, line);

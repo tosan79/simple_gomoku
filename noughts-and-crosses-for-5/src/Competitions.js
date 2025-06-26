@@ -16,11 +16,14 @@ function Competitions() {
     const fetchLeaderboard = async () => {
         try {
             const token = localStorage.getItem("token");
-            const response = await fetch(`${API_URL}/api/classroom/leaderboard`, {
-                headers: {
-                    Authorization: token,
+            const response = await fetch(
+                `${API_URL}/api/classroom/leaderboard`,
+                {
+                    headers: {
+                        Authorization: token,
+                    },
                 },
-            });
+            );
 
             const data = await response.json();
             setLeaderboardData(data);
@@ -33,15 +36,19 @@ function Competitions() {
     };
 
     const formatDate = (dateString) => {
-        return new Date(dateString).toLocaleString('pl-PL');
+        return new Date(dateString).toLocaleString("pl-PL");
     };
 
     const getPositionEmoji = (position) => {
         switch (position) {
-            case 1: return "🥇";
-            case 2: return "🥈";
-            case 3: return "🥉";
-            default: return `${position}.`;
+            case 1:
+                return "🥇";
+            case 2:
+                return "🥈";
+            case 3:
+                return "🥉";
+            default:
+                return `${position}.`;
         }
     };
 
@@ -62,8 +69,20 @@ function Competitions() {
                     tutaj pojawi się ranking dla twojej klasy, gdy będą dostępne
                     wyniki.
                 </p>
+                <div className="comptetitions-container">
+                    <div className="scoring-info">
+                        <h4>system punktacji:</h4>
+                        <div>
+                            <p>wygrana: 3 punkty<br/>
+                            remis: 1 punkt<br/>
+                            przegrana: 0 punktów </p>
+                        </div>
+                    </div>
+                </div>
                 <div className="action-buttons">
-                    <Link to="/welcome" className="back-button">powrót do menu</Link>
+                    <Link to="/welcome" className="back-button">
+                        powrót do menu
+                    </Link>
                 </div>
             </div>
         );
@@ -77,10 +96,20 @@ function Competitions() {
             <div className="tournament-info">
                 <h3>ranking dla klasy: {leaderboardData.classroom}</h3>
                 <div className="tournament-details">
-                    <p><strong>zawody zakończone:</strong> {formatDate(leaderboardData.tournament.endDate)}</p>
-                    <p><strong>rozegrane mecze:</strong> {leaderboardData.tournament.completedMatches} / {leaderboardData.tournament.totalMatches}</p>
+                    <p>
+                        <strong>zawody zakończone:</strong>{" "}
+                        {formatDate(leaderboardData.tournament.endDate)}
+                    </p>
+                    <p>
+                        <strong>rozegrane mecze:</strong>{" "}
+                        {leaderboardData.tournament.completedMatches} /{" "}
+                        {leaderboardData.tournament.totalMatches}
+                    </p>
                     {leaderboardData.tournament.failedMatches > 0 && (
-                        <p><strong>mecze z błędami:</strong> {leaderboardData.tournament.failedMatches}</p>
+                        <p>
+                            <strong>mecze z błędami:</strong>{" "}
+                            {leaderboardData.tournament.failedMatches}
+                        </p>
                     )}
                 </div>
             </div>
@@ -109,7 +138,9 @@ function Competitions() {
                                 <td className="wins">{entry.wins}</td>
                                 <td className="draws">{entry.draws}</td>
                                 <td className="losses">{entry.losses}</td>
-                                <td className="total-matches">{entry.matchesPlayed}</td>
+                                <td className="total-matches">
+                                    {entry.matchesPlayed}
+                                </td>
                             </tr>
                         ))}
                     </tbody>
@@ -126,7 +157,9 @@ function Competitions() {
             </div>
 
             <div className="action-buttons">
-                <Link to="/welcome" className="back-button">powrót do menu</Link>
+                <Link to="/welcome" className="back-button">
+                    powrót do menu
+                </Link>
             </div>
         </div>
     );

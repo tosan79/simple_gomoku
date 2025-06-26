@@ -1886,13 +1886,6 @@ app.delete("/api/admin/users/:userId", authenticateAdmin, async (req, res) => {
 //     console.log(`Server running on port ${PORT}`);
 // });
 
-// send all non-api requests to react
-app.get("*", (req, res) => {
-    res.sendFile(
-        path.join(__dirname, "noughts-and-crosses-for-5", "build", "index.html")
-    );
-});
-
 if (process.env.NODE_ENV === "production") {
     try {
         // HTTPS server on port 443

@@ -1880,6 +1880,71 @@ app.delete("/api/admin/users/:userId", authenticateAdmin, async (req, res) => {
     }
 });
 
+(async function initializeDefaultPrograms() {
+    try {
+        const defaultPrograms = [
+            {
+                name: 'admin',
+                filename: 'admin.cpp'
+            },
+            {
+                name: 'random',
+                filename: 'random.cpp'
+            }
+        ];
+
+        for (const program of defaultPrograms) {
+            const sourceFile = path.join(playingDir, program.filename);
+            const compiledPath = path.join(playingDir, program.name);
+
+            // check if source file exists
+            if (!fs.existsSync(sourceFile)) {
+                console.warn(`Default program source not found: ${sourceFile}`);
+                continue;
+            }
+
+            try {
+                console.log(`Compiling default program: ${program.name}`);
+                await compileCode(sourceFile, compiledPath);
+
+                await fs.promises.chmod(compiledPath, 0o755);
+
+                const code = await fs.promises.readFile(sourceFile, 'utf8');
+
+                const existingProgram = await dbGet(
+                    "SELECT * FROM programs WHERE name = ?",
+                    [program.name]
+                );
+
+                const oid = await dbGet(
+                    "SELECT id FROM users WHERE username = ?",
+                    [program.name]
+                );
+
+                if (existingProgram) {
+                    // Update existing program
+                    await dbRun(
+                        "UPDATE programs SET code = ?, compiled_path = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                        [code, compiledPath, existingProgram.id]
+                    );
+                    console.log(`Updated default program: ${program.name}`);
+                } else {
+                    await dbRun(
+                        "INSERT INTO programs (name, code, owner_id, compiled_path) VALUES (?, ?, ?, ?)",
+                        [program.name, code, oid, compiledPath]
+                    );
+                    console.log(`Created default program: ${program.name}`);
+                }
+
+            } catch (compileError) {
+                console.error(`Failed to compile default program ${program.name}:`, compileError.message);
+            }
+        }
+    } catch (error) {
+        console.error("Error initializing default programs:", error);
+    }
+})();
+
 // const PORT = process.env.PORT || 4000;
 
 // app.listen(PORT, () => {
